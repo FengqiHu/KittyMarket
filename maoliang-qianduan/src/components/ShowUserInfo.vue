@@ -1,16 +1,18 @@
 <template>
+<section class="legacy-page">
   <div v-if="isLoggedIn">
     <div id="a">
     <div class="container">
       <div class="form-group">
         <h2>当前意向订单</h2>
       </div>
-      <table border="1px" align=center cellspacing="0">
+      <table   >
         <tr>
           <th>ID</th>
           <th>地址</th>
           <th>电话</th>
-          <th>购买人姓名</th>
+          <th>收货人</th>
+          <th>数量</th>
           <th>商品ID</th>
           <th>操作</th>
           <th>订单状态</th>
@@ -19,7 +21,8 @@
           <td>{{ order.orderid }}</td>
           <td>{{ order.address }}</td>
           <td>{{ order.telephone }}</td>
-          <td>{{ order.buyername }}</td>
+          <td>{{ order.recipientname || order.buyername }}</td>
+          <td>{{ order.number }}</td>
           <td>{{ order.goodid }}</td>
           <td>
             <button v-if="order.orderstate === 1"
@@ -33,7 +36,7 @@
                     class="shipment-btn">确认发货</button>
             <button v-else-if="order.orderstate === 4"
                     class="delivery-btn">发货完成</button>
-            <button v-if=" order.orderstate <= 4 && order.orderstate > 0" @click="cancelOrder(order.orderid)" class="red-btn">取消订单</button>
+            <button v-if=" order.orderstate < 4 && order.orderstate > 0" @click="cancelOrder(order.orderid)" class="red-btn">取消订单</button>
             <span v-if="order.orderstate < 0 || order.orderstate > 4">无法操作订单</span>
           </td>
           <td>
@@ -50,11 +53,12 @@
     </div>
   </div>
   <div v-else class="else">
-    您还未登录，请先<a href="login">登录</a>
+    您还未登录，请先<router-link to="/">登录</router-link>
   </div>
+</section>
 </template>
-
 <script>
+import { ElMessage } from 'element-plus';
 import axios from 'axios';
 export default {
   data() {
@@ -109,15 +113,15 @@ export default {
         // 这里将状态加 1 来模拟确认订单
         let updatedOrderState = order.orderstate + 1;
         // 发送异步请求到服务器以更新订单状态
-        axios.post('/order/confirmorder-control', { orderid: orderId, orderstate: updatedOrderState })
+        axios.post('/order/confirmorder-control', null, { params: { orderid: orderId, orderstate: updatedOrderState } })
             .then(response => {
               if (response.data && response.data.msg === '确认订单成功') {
                 // 如果成功，更新本地订单状态
                 order.orderstate = updatedOrderState;
-                alert("该订单阶段确认成功！");
+                ElMessage.info("该订单阶段确认成功！");
                 // 可能还需要重新获取订单列表
               } else {
-                alert("该订单阶段确认失败！");
+                ElMessage.info("该订单阶段确认失败！");
               }
             })
             .catch(error => {
@@ -130,15 +134,15 @@ export default {
       const order = this.orders.find(o => o.orderid === orderId);
       if (order) {
         // 发送异步请求到服务器以更新订单状态
-        axios.post('/order/deleteorder-control', { orderid: orderId, orderstate: -1 })
+        axios.post('/order/deleteorder-control', null, { params: { orderid: orderId, orderstate: -1 } })
             .then(response => {
               if (response.data && response.data.msg === '取消订单成功') {
                 // 如果成功，更新本地订单状态
                 order.orderstate = -1;
-                alert("该订单取消成功！");
+                ElMessage.info("该订单取消成功！");
                 // 可能还需要重新获取订单列表
               } else {
-                alert("该订单取消失败！");
+                ElMessage.info("该订单取消失败！");
               }
             })
             .catch(error => {
@@ -195,7 +199,7 @@ export default {
     },
     // 计算总页数
     totalPages() {
-      return Math.ceil(this.orders.length / this.itemsPerPage);
+      return Math.max(1, Math.ceil(this.orders.length / this.itemsPerPage));
     },
     isPrevDisabled() {
       return this.currentPage <= 1;
@@ -225,131 +229,3 @@ export default {
   },
 }
 </script>
-
-<!-- 未登录框 -->
-<style type="text/css" scoped>
-.form-group {
-  display: flex;
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 如果需要垂直居中也可以添加 */
-  /* 其他样式... */
-}
-.else{
-position:absolute;
-top:40%;
-left:50%;
-transform:translate(-50%,-50%);
-width:450px;
-padding:30px;
-background: rgba(224,224,224,.8);
-box-sizing:border-box;
-box-shadow: 0px 15px 25px rgba(0,0,0,.5);
-border-radius:16px;
-text-align:center;
-font-family:KaiTi;
-font-size:26px;
-}
-a{
-	text-decoration:none;
-}
-</style>
-<style scoped>
-.container {
-        font-family: Arial, sans-serif;
-        width: 80%;
-        margin: 2% auto;
-        border: 1px solid #ccc;
-        padding: 20px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
-
-    th, td {
-        border: 1px solid #ccc;
-        padding: 10px;
-        text-align: left;
-    }
-
-    th {
-        background-color: #f2f2f2;
-    }
-
-    img {
-        width: 50px;
-        height: auto;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .history-btn, .prev, .next {
-        padding: 10px 20px;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        margin: 0 5px;
-    }
-    
-    .history-btn {
-      background-color: rgb(237, 137, 108);
-      border-radius: 8px;
-    }
-    
-    .prev, .next {
-      background-color: rgb(237, 196, 110);
-    }
-
-    .history-btn:hover, .prev:hover, .next:hover {
-        background-color: #d32f2f;
-    }
-    
-    .history-btn a {
-        text-decoration: none;
-        color: white;
-    }
-    
-    .history-btn a:hover {
-        text-decoration: none; 
-    }
-    .left-btn-container {
-      margin-right: auto;
-      display: flex;
-      align-items: center;
-	}
-    button {
-            padding: 5px 10px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-/* 根据按钮功能命名 */
-.confirm-btn {
-  background-color: green;
-}
-
-.stock-btn {
-  background-color: orange;
-}
-
-.shipment-btn {
-  background-color: lightblue;
-}
-
-.delivery-btn {
-  background-color: grey;
-}
-
-    .red-btn {
-            background-color: tomato;
-     }
-</style>

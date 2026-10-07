@@ -1,94 +1,9 @@
 <template>
-  <body style="margin: 0;">
-  <div v-if="isLoggedIn">
-    <div class="left">
-      <!-- 页面头部 -->
-      <table class="daohang">
-        <img class="head1" src="~@/assets/img/buyer/head.png" alt="">
-        <tr>
-          <td class="head2">{{ username }}</td>
-        </tr>
-        <tr>
-          <td class="head4">
-            <h3 @click="navigateTo('BuyerCart')" class="head4-1" style="cursor: pointer;">我的购物车</h3>
-          </td>
-        </tr>
-        <tr>
-          <td class="head4">
-            <h3 @click="navigateTo('BuyerLikes')" class="head4-1" style="cursor: pointer;">我的收藏</h3>
-          </td>
-        </tr>
-        <tr>
-          <td class="head4">
-            <h3 @click="navigateTo('buyerHistory')" class="head4-1" style="cursor: pointer;">历史购买记录</h3>
-          </td>
-        </tr>
-        <tr>
-          <td class="head4">
-            <h3 @click="navigateTo('BuyerShowRecommend')" class="head4-1" style="cursor: pointer;">展示推荐商品</h3>
-          </td>
-        </tr>
-        <tr>
-          <td class="head4">
-            <h3 @click="navigateTo('BuyerMain')" class="head4-1" style="cursor: pointer;">返回主页</h3>
-          </td>
-        </tr>
-        <tr>
-          <td class="head5">
-            <button @click="handleLogout" class="head5-1" style="cursor: pointer;">退出登录</button>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="right">
-      <h2 class="section-title">今日推荐商品</h2>
-      <div class="goods-container">
-        <!-- 遍历展示猫粮列表 -->
-        <div v-for="item in items" :key="item.goodid" class="good-item">
-          <div @click="postToBuyerShop(item.goodid)">
-            <div class="picture">
-              <!-- 显示猫粮图片 -->
-              <img :src="getImageUrl(item.picture)" alt="猫粮图片">
-            </div>
-            <div class="goodname">商品名称: {{ item.goodname.trim() }}</div>
-            <div class="price">价格: {{ item.price }} 元/袋</div>
-            <div class="description">每日推荐饮食量: {{ item.weight }}g</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-else>
-    <!-- 用户未登录时显示的内容 -->
-    <div class="else">
-      <div class="left">
-        <!-- 页面头部 -->
-        <table class="daohang">
-          <img class="head1" src="~@/assets/img/buyer/head.png" alt="">
-          <tr>
-            <td class="head2">游客</td>
-          </tr>
-          <tr>
-            <td class="head4">
-              <h3 class="head4-1">其他功能请登录后使用</h3>
-            </td>
-          </tr>
-          <tr>
-            <td class="head5">
-              <button @click="handleLogout" class="head5-1" style="cursor: pointer;">返回登录</button>
-            </td>
-          </tr>
-        </table>
-      </div>
-      <div class="right">该功能请登录后使用</div>
-    </div>
-  </div>
-  </body>
+<div class="section-heading"><div><h1>猫粮推荐</h1><p>根据猫咪的品种、年龄和体重，找到适合它的猫粮。</p></div><el-button @click="fetchRecommendedCatFood"><el-icon><IconRefresh /></el-icon>刷新推荐</el-button></div><section class="recommend-banner"><el-icon><IconCollection /></el-icon><div><strong>按猫咪档案匹配猫粮</strong><p>每日建议喂食量仅供参考，请结合猫咪实际情况调整。</p></div><el-button @click="$router.push('/buyer-show-cat')">查看猫咪档案<el-icon><IconArrowRight /></el-icon></el-button></section><div class="product-grid"><article v-for="item in items" :key="item.goodid" class="product-card"><button class="product-cover" @click="postToBuyerShop(item.goodid)"><ProductMedia :path="item.picture" :alt="item.goodname" /><span class="product-category">推荐商品</span></button><div class="product-card-body"><h3>{{ item.goodname }}</h3><p>建议每日喂食 {{ Number(item.weight).toFixed(1) }} g</p><div class="product-card-bottom"><span class="product-price"><small>¥</small>{{ Number(item.price).toFixed(2) }}</span><el-button size="small"  @click="postToBuyerShop(item.goodid)">查看详情</el-button></div></div></article></div><el-empty v-if="!items.length" description="暂无匹配推荐，请先确认猫咪档案或浏览更多商品"><el-button @click="$router.push('/buyer')">浏览商品</el-button></el-empty>
 </template>
 
 <script>
+import { mediaUrl } from '../utils/media';
 import { mapActions } from 'vuex';
 import axios from "axios";
 
@@ -110,12 +25,7 @@ export default {
   },
   methods: {
     ...mapActions(['logout']),
-    getImageUrl(picturePath) {
-      // 处理相对路径，转换为完整的图片 URL
-      const imagePath = picturePath.replace(/^\.\//, '').trim(); // 去除相对路径中的 './'
-      //return baseUrl + imagePath;
-       return require(`~@/${imagePath}`);
-    },
+    getImageUrl(picturePath) { return mediaUrl(picturePath); },
     async fetchUserData() {
       try {
         const response = await axios.get('/now-usr');
@@ -174,87 +84,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-body {
-  margin: 0;
-}
-
-.left {
-  width: 287px;
-  height: 100vh;
-  background-color: rgba(61, 61, 61, 0.33);
-  float: left;
-}
-
-.right {
-  width: calc(100% - 287px);
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-}
-
-.daohang {
-  background-color: rgba(0, 0, 0, 0);
-  width: 200px;
-  margin-left: 30px;
-}
-
-.head1 {
-  position: relative;
-  top: 30px;
-  left: 70px;
-}
-
-.head2 {
-  text-align: center;
-  vertical-align: top;
-  font-size: 36px;
-  color: white;
-  height: 100px;
-}
-
-.head4,
-.head5 {
-  text-align: center;
-  height: 100px;
-}
-
-.head4-1,
-.head5-1 {
-  text-decoration: none;
-  color: #ffffff;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.goods-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  gap: 50px;
-  justify-items: center; /* 将项目在 grid 单元格内居中对齐 */
-  justify-content: center; /* 将整个 grid 内容在容器内居中对齐 */
-}
-
-.good-item {
-  margin: 10px;
-  width: 100%; /* 宽度占满父容器 */
-  padding: 20px;
-  border: 1px solid #ccc;
-  text-align: center;
-  background: rgba(220, 220, 220, 0.37);
-}
-
-.picture img {
-  width: 100%;
-  max-width: 500px;
-  height: auto;
-}
-
-.price,
-.description {
-  margin-top: 10px;
-}
-</style>

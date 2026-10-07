@@ -317,6 +317,11 @@ public class GoodController {
         return new Result(BUYER_SHOP_PAGE, null, null);
     }
 
+    @GetMapping("/details/{goodid}")
+    public Good goodDetails(@PathVariable int goodid) {
+        return goodService.showGood(goodid);
+    }
+
     @RequestMapping("/modify-price")
     public Result modifyPriceforGood(@RequestBody Modifypricedata modifypricedata) {
         Usr currentUsr = (Usr) session.getAttribute("admin");

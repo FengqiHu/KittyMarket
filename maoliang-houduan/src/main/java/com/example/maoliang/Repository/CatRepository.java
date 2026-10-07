@@ -37,8 +37,8 @@ public class CatRepository {
 
     public List<Good> findGoodsByCatAge(int newcatage) {
         String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight FROM MLgood " +
-                "WHERE CAST(SUBSTRING(catage, 1, POSITION('-' IN catage) - 1) AS INT) <= ? " +
-                "AND CAST(SUBSTRING(catage, POSITION('-' IN catage) + 1) AS INT) >= ?";
+                "WHERE CAST(SUBSTRING(catage, 1, POSITION('-' IN catage) - 1) AS SIGNED) <= ? " +
+                "AND CAST(SUBSTRING(catage, POSITION('-' IN catage) + 1) AS SIGNED) >= ?";
 
         List<Good> goods = new ArrayList<>();
 

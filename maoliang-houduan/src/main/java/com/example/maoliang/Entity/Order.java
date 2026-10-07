@@ -13,6 +13,7 @@ public class Order {
 	private String address;
 	private String telephone;
 	private String buyername;
+	private String recipientname;
 	private int goodid;
 	private int number;
 	private int orderstate;
@@ -53,6 +54,12 @@ public class Order {
 	}
 	public void setBuyername(String buyername) {
 		this.buyername = buyername;
+	}
+	public String getRecipientname() {
+		return recipientname == null ? buyername : recipientname;
+	}
+	public void setRecipientname(String recipientname) {
+		this.recipientname = recipientname;
 	}
 	public int getGoodid() {
 		return goodid;

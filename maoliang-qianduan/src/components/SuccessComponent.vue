@@ -1,13 +1,5 @@
 <template>
-  <div class="success-page">
-    <h2>成功界面</h2>
-    <div v-if="SuccessMessage">
-      {{ SuccessMessage }}
-    </div>
-    <div v-if="redirectTo">
-      <router-link :to="redirectTo">返回页面</router-link>
-    </div>
-  </div>
+<section class="surface result-surface"><el-result icon="success" title="操作已完成" :sub-title="SuccessMessage"><template #extra><el-button type="primary" @click="$router.push(redirectTo)">继续</el-button></template></el-result></section>
 </template>
 
 <script>
@@ -26,7 +18,3 @@ export default {
   }
 };
 </script>
-
-<style>
-
-</style>

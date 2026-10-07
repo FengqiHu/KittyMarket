@@ -26,6 +26,7 @@ public class OrderListRepository {
                 or.setAddress(rs.getString("address"));
                 or.setTelephone(rs.getString("telephone"));
                 or.setBuyername(rs.getString("buyername"));
+                or.setRecipientname(rs.getString("recipientname"));
                 or.setGoodid(rs.getInt("goodid"));
                 or.setNumber(rs.getInt("number"));
                 or.setOrderstate(rs.getInt("orderstate"));
@@ -49,6 +50,7 @@ public class OrderListRepository {
                 or.setAddress(rs.getString("address"));
                 or.setTelephone(rs.getString("telephone"));
                 or.setBuyername(rs.getString("buyername"));
+                or.setRecipientname(rs.getString("recipientname"));
                 or.setGoodid(rs.getInt("goodid"));
                 or.setNumber(rs.getInt("number"));
                 or.setOrderstate(rs.getInt("orderstate"));
@@ -99,6 +101,7 @@ public class OrderListRepository {
                 or.setAddress(rs.getString("address"));
                 or.setTelephone(rs.getString("telephone"));
                 or.setBuyername(rs.getString("buyername"));
+                or.setRecipientname(rs.getString("recipientname"));
                 or.setGoodid(rs.getInt("goodid"));
                 or.setNumber(rs.getInt("number"));
                 or.setOrderstate(rs.getInt("orderstate"));

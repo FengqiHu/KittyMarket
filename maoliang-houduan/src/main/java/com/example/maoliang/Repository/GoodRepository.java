@@ -103,7 +103,7 @@ public class GoodRepository{
     }
 
     public List<Map<String, Object>> showBuyerCart(int userId) {
-        String sql = "SELECT g.GOODID as id , g.GOODNAME as name,g.PRICE as price,g.DESCRIPTION as description,g.KIND as kind,g.PICTURE as mediaFiles,g.NUMBER as maxquantity FROM MLbuying b left join MLGOOD g on b.GOODID=g.GOODID  WHERE b.buyer = ?";
+        String sql = "SELECT g.GOODID as id , g.GOODNAME as name,g.PRICE as price,g.DESCRIPTION as description,g.KIND as kind,g.PICTURE as mediaFiles,g.NUMBER as maxquantity FROM MLbuying b left join MLGOOD g on b.GOODID=g.GOODID  WHERE b.buyer = ? AND b.number > 0";
         return jdbcTemplate.queryForList(sql, userId);
     }
     public List<Map<String,Object>> showLike(int userId, int islike) {
@@ -153,6 +153,23 @@ public class GoodRepository{
             // 如果查询结果为空，返回 null
             return null;
         }
+    }
+
+    public Good lockGood(int goodid) {
+        List<Good> goods = jdbcTemplate.query("SELECT * FROM MLgood WHERE goodid = ? FOR UPDATE",
+                BeanPropertyRowMapper.newInstance(Good.class), goodid);
+        return goods.isEmpty() ? null : goods.get(0);
+    }
+
+    public boolean reserveStock(int goodid, int quantity) {
+        return jdbcTemplate.update("UPDATE MLgood SET number = number - ? " +
+                "WHERE goodid = ? AND state = 0 AND number >= ?", quantity, goodid, quantity) == 1;
+    }
+
+    public void consumeCart(int goodid, int buyer, int quantity) {
+        // Cart quantities and favourites share a row; retain the favourite after checkout.
+        jdbcTemplate.update("UPDATE MLbuying SET number = GREATEST(0, number - ?) " +
+                "WHERE goodid = ? AND buyer = ?", quantity, goodid, buyer);
     }
 
 

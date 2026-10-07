@@ -1,35 +1,35 @@
 import {createRouter, createWebHashHistory} from 'vue-router';
-import LoginComponent from '@/components/LoginComponent.vue';
-import RegisterComponent from '@/components/RegisterComponent.vue';
-import ChooseRegister from '@/components/ChooseRegister.vue';
-import BuyerMain from '@/components/BuyerMain.vue';
-import SellerMain from '@/components/SellerMain.vue';
-import UpdatePasswordComponent from '@/components/UpdatePasswordComponent.vue';
-import ShowGoods from '@/components/ShowGoods'
-import ShowUserInfo from '@/components/ShowUserInfo.vue';
-import ShowHistoryGoods from '@/components/ShowHistoryGoods.vue';
-import ShowAllUsers from '@/components/ShowAllUsers.vue';
-import UploadMultipleGoods from '@/components/UploadMultipleGoods.vue';
-import ForgotPasswordComponent from '@/components/ForgotPasswordComponent.vue';
-import GuestComponent from '@/components/GuestComponent.vue'; 
-import UserOrderHistory from '@/components/UserOrderHistory.vue';
-import SuccessComponent from '@/components/SuccessComponent.vue';
-import SecretQuestionComponent from '@/components/SecretQuestionComponent.vue';
-import BuyerHistory from '@/components/BuyerHistory.vue';
-import BuyerLikes from '@/components/BuyerLikes.vue';
-import BuyerCart from '@/components/BuyerCart.vue';
-import BuyerFillInfo from '@/components/BuyerFillInfo.vue'
-import BuyerShop from '@/components/BuyerShop';
-import ErrorComponent from "@/components/ErrorComponent.vue";
-import ShowSearchGoods from "@/components/ShowSearchGoods.vue";
-import ShowSearchHistoryGoods from "@/components/ShowSearchHistoryGoods.vue";
-import BuyerSearch from "@/components/BuyerSearch.vue";
-import UploadOneGood from "@/components/UploadOneGood.vue";
-import BuyerShowCat from "@/components/BuyerShowCat.vue";
-import BuyerUploadCat from "@/components/BuyerUploadCat.vue";
-import BuyerShowRecommend from "@/components/BuyerShowRecommend.vue";
-import BuyerAfterSale from "@/components/BuyerAfterSale.vue";
-import BuyerPay from "@/components/BuyerPay.vue";
+const LoginComponent = () => import('@/components/LoginComponent.vue');
+const RegisterComponent = () => import('@/components/RegisterComponent.vue');
+const ChooseRegister = () => import('@/components/ChooseRegister.vue');
+const BuyerMain = () => import('@/components/BuyerMain.vue');
+const SellerMain = () => import('@/components/SellerMain.vue');
+const UpdatePasswordComponent = () => import('@/components/UpdatePasswordComponent.vue');
+const ShowGoods = () => import('@/components/ShowGoods');
+const ShowUserInfo = () => import('@/components/ShowUserInfo.vue');
+const ShowHistoryGoods = () => import('@/components/ShowHistoryGoods.vue');
+const ShowAllUsers = () => import('@/components/ShowAllUsers.vue');
+const UploadMultipleGoods = () => import('@/components/UploadMultipleGoods.vue');
+const ForgotPasswordComponent = () => import('@/components/ForgotPasswordComponent.vue');
+const GuestComponent = () => import('@/components/GuestComponent.vue');
+const UserOrderHistory = () => import('@/components/UserOrderHistory.vue');
+const SuccessComponent = () => import('@/components/SuccessComponent.vue');
+const SecretQuestionComponent = () => import('@/components/SecretQuestionComponent.vue');
+const BuyerHistory = () => import('@/components/BuyerHistory.vue');
+const BuyerLikes = () => import('@/components/BuyerLikes.vue');
+const BuyerCart = () => import('@/components/BuyerCart.vue');
+const BuyerFillInfo = () => import('@/components/BuyerFillInfo.vue');
+const BuyerShop = () => import('@/components/BuyerShop');
+const ErrorComponent = () => import('@/components/ErrorComponent.vue');
+const ShowSearchGoods = () => import('@/components/ShowSearchGoods.vue');
+const ShowSearchHistoryGoods = () => import('@/components/ShowSearchHistoryGoods.vue');
+const BuyerSearch = () => import('@/components/BuyerSearch.vue');
+const UploadOneGood = () => import('@/components/UploadOneGood.vue');
+const BuyerShowCat = () => import('@/components/BuyerShowCat.vue');
+const BuyerUploadCat = () => import('@/components/BuyerUploadCat.vue');
+const BuyerShowRecommend = () => import('@/components/BuyerShowRecommend.vue');
+const BuyerAfterSale = () => import('@/components/BuyerAfterSale.vue');
+const BuyerPay = () => import('@/components/BuyerPay.vue');
 
 const routes = [
   { path: '/', component: LoginComponent },
@@ -77,7 +77,7 @@ const routes = [
       {
         path: 'user-order-history',
         name: 'UserOrderHistory',
-        component: UserOrderHistory 
+        component: UserOrderHistory
       },
       {
         path: 'show-historygoods',

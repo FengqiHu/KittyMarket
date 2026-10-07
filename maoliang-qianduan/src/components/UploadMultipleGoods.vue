@@ -1,4 +1,5 @@
 <template>
+<section class="legacy-page">
   <div class="container" v-if="isLoggedIn">
     <h1>上传多个商品</h1>
     <!-- 表单和输入字段 -->
@@ -27,22 +28,22 @@
       </div>
       <div class="form-group">
         <label for="description">卡路里：</label>
-        <input type="text" v-model="calorie" placeholder="请输入商品卡路里cal/g" required><br><br>
+        <input type="text" v-model="calorie" placeholder="请输入商品卡路里cal/g" required>
         <span v-if="errors.calorie" class="error">{{ errors.calorie }}</span>
       </div>
       <div class="form-group">
         <label for="description">适用品种：</label>
-        <input type="text" v-model="catkind" placeholder="请输入适用猫咪品种" required><br><br>
+        <input type="text" v-model="catkind" placeholder="请输入适用猫咪品种" required>
         <span v-if="errors.catkind" class="error">{{ errors.catkind }}</span>
       </div>
       <div class="form-group">
         <label for="description">适用体重：</label>
-        <input type="text" v-model="catweight" placeholder="请输入适用猫咪体重" required><br><br>
+        <input type="text" v-model="catweight" placeholder="请输入适用猫咪体重" required>
         <span v-if="errors.catweight" class="error">{{ errors.catweight }}</span>
       </div>
       <div class="form-group">
         <label for="description">适用年龄：</label>
-        <input type="text" v-model="catage" placeholder="请输入适用猫咪年龄" required><br><br>
+        <input type="text" v-model="catage" placeholder="请输入适用猫咪年龄" required>
         <span v-if="errors.catage" class="error">{{ errors.catage }}</span>
       </div>
       <div class="form-group">
@@ -71,15 +72,15 @@
             没有选择文件
           </div>
       </div>
-      <button type="button" @click="prevImage">＜</button>&nbsp;
+      <button type="button" @click="prevImage">＜</button>
       <button type="button" @click="nextImage">＞</button>
 
       <!-- 底部是一个上传按钮，在上传图片为空的时候时它显示的是“上传图片/视频”，在有内容的时候为“继续上传”-->
-      <input type="file" :disabled="isFileInputDisabled" ref="fileInput" @change="handleFileChange" accept="image/png, image/jpeg, video/mp4" multiple style="display: none;">
+      <input type="file" :disabled="isFileInputDisabled" ref="fileInput" @change="handleFileChange" accept="image/png, image/jpeg, video/mp4" multiple >
       <!-- 添加自定义的上传按钮 -->
       <button type="button" @click="triggerFileInput">上传图片/视频</button>
       <!-- 图片错误提示 -->
-      <span class="error" v-if="errors.pictureError">{{ errors.pictureError }}</span><br>
+      <span class="error" v-if="errors.pictureError">{{ errors.pictureError }}</span>
       <button @click="addProduct">添加商品</button>
     </div>
 
@@ -112,8 +113,8 @@
           <td>{{ product.catage }}</td>
         <td>
           <div v-for="(file, index) in product.mediaFiles" :key="index">
-            <img v-if="isImage(file)" :src="getURL(file)" alt="Image view" style="max-width: 100px; max-height: 100px; object-fit: contain;">
-            <video v-else controls :src="getURL(file)" style="max-width: 100px; max-height: 100px;"></video>
+            <img v-if="isImage(file)" :src="getURL(file)" alt="Image view" >
+            <video v-else controls :src="getURL(file)" ></video>
           </div>
         </td>
         <td>{{ product.kind }}</td>
@@ -125,11 +126,12 @@
     <button @click="PredUploadProducts">确认发布所有商品</button>
   </div>
   <div v-else>
-    您还未登录，请先<a href="/login">登录</a>
+    您还未登录，请先<router-link to="/">登录</router-link>
   </div>
+</section>
 </template>
-
 <script>
+import { ElMessage } from 'element-plus';
 import axios from "axios";
 
 export default {
@@ -209,13 +211,13 @@ export default {
       // 在这里处理表单提交逻辑
       // 验证商品名称长度
       if (this.goodName.length > 20) {
-        alert("商品名称不能超过20个字符");
+        ElMessage.info("商品名称不能超过20个字符");
         return;
       }
 
       // 验证价格为数字
       if (isNaN(this.price)) {
-        alert("价格需要输入数字");
+        ElMessage.info("价格需要输入数字");
         return;
       }
 
@@ -227,38 +229,38 @@ export default {
 
       // 验证商品描述长度
       if (this.description.length > 100) {
-        alert("商品描述不能超过100个字符");
+        ElMessage.info("商品描述不能超过100个字符");
         return;
       }
 
       // 验证至少上传一个文件
       if (this.selectedFiles.length === 0) {
-        alert("请上传至少一个文件");
+        ElMessage.info("请上传至少一个文件");
         return;
       }
 
       // 验证卡路里
       const calorieValue = parseFloat(this.calorie);
       if (isNaN(calorieValue) || calorieValue <= 0 || calorieValue >= 100) {
-        alert('卡路里需为大于0小于100的数字');
+        ElMessage.info('卡路里需为大于0小于100的数字');
         return;
       }
 
       // 验证适用品种
       if (!this.catkind.trim().match(/^[\u4e00-\u9fa5,]+$/)) {
-        alert('适用品种格式不正确');
+        ElMessage.info('适用品种格式不正确');
         return;
       }
 
       // 验证适用体重
       if (!this.catweight.trim().match(/^\d+(\.\d+)?-\d+(\.\d+)?$/)) {
-        alert('适用体重格式不正确，需为数字-数字');
+        ElMessage.info('适用体重格式不正确，需为数字-数字');
         return;
       }
 
       // 验证适用年龄
       if (!this.catage.trim().match(/^\d+(\.\d+)?-\d+(\.\d+)?$/)) {
-        alert('适用年龄格式不正确，需为数字-数字');
+        ElMessage.info('适用年龄格式不正确，需为数字-数字');
         return;
       }
 
@@ -298,7 +300,7 @@ export default {
       this.catage = '';
       this.selectedFiles = [];
       console.log(this.selectedFiles);
-      alert("商品已添加"); // 提示用户
+      ElMessage.info("商品已添加"); // 提示用户
     },
     isImage(file) {
       return file && file.type && file.type.startsWith('image/');
@@ -331,7 +333,7 @@ export default {
 
       // 如果有不支持的文件类型，提醒用户并返回
       if (validFiles.length < files.length) {
-        alert("不支持的文件格式。请上传png、jpg或mp4格式的文件。");
+        ElMessage.info("不支持的文件格式。请上传png、jpg或mp4格式的文件。");
         return;
       }
 
@@ -343,20 +345,20 @@ export default {
 
       // 检查文件数量
       if (files.length > maxFiles) {
-        alert(`您只能上传最多 ${maxFiles} 个文件。`);
+        ElMessage.info(`您只能上传最多 ${maxFiles} 个文件。`);
         return;
       }
 
       // 检查文件大小
       const isAnyFileTooLarge = files.some(file => file.size > maxSize);
       if (isAnyFileTooLarge) {
-        alert("所有文件必须小于10MB，请重新选择文件。");
+        ElMessage.info("所有文件必须小于10MB，请重新选择文件。");
       return;
       }
-      
+
       // 如果选择的文件超过3个，提醒用户
       if (this.selectedFiles.length + newFiles.length > 3) {
-        alert("最多只能上传3个文件。");
+        ElMessage.info("最多只能上传3个文件。");
         return;
       }
 
@@ -488,112 +490,3 @@ export default {
 
 };
 </script>
-
-<style scoped>
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow-y: auto;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"],
-        input[type="file"] {
-            width: 50%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        button {
-            background-color: #007BFF;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border: 1px solid #dddd; /* 添加边距 */
-        }
-        
-        th {
-            background-color: #007BFF;
-            color: #fff;
-        }
-        img {
-            max-width: 100px;
-            max-height: 100px;
-             object-fit: contain;
-        }
-        
-        .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.close:hover {
-    color: #000;
-    text-decoration: none;
-}
-    .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    
-    .price-modal-content {
-    background-image: url('~@/assets/img/a.jpg'); /* 更改为您自己的图片路径 */
-    background-size: cover; /* 调整背景图片大小以填充整个容器 */
-    background-position: center; /* 居中显示背景图片 */
-    opacity: 1; /* 调整透明度（0.8表示80%的不透明度） */
-}
-#preview {
-    /* 设置预览窗口的大小和样式 */
-    width: 200px;
-    height: 200px;
-    border: 1px solid #ccc;
-    position: relative;
-    overflow: hidden;
-}
-
-#preview img {
-    /* 设置图片的大小和位置 */
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-#preview button {
-    /* 设置删除按钮的样式和位置 */
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.5);
-    border: none;
-
-}
-</style>

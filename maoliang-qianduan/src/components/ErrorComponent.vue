@@ -1,13 +1,5 @@
 <template>
-  <div>
-    <h2>错误界面</h2>
-    <div v-if="errorMessage">
-      {{ errorMessage }}
-    </div>
-    <div v-if="redirectTo">
-      <router-link :to="redirectTo">返回页面</router-link>
-    </div>
-  </div>
+<section class="surface result-surface"><el-result icon="warning" title="这一步没有完成" :sub-title="errorMessage || '请检查输入后再试一次。'"><template #extra><el-button type="primary" @click="$router.push(redirectTo)">返回重试</el-button><el-button @click="$router.back()">上一页</el-button></template></el-result></section>
 </template>
 
 <script>
@@ -25,7 +17,3 @@ export default {
   }
 };
 </script>
-
-<style>
-/* 添加您的样式 */
-</style>

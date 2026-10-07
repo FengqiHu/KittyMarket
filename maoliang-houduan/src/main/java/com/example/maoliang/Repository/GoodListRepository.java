@@ -93,7 +93,7 @@ public class GoodListRepository {
     }
 
     public List<Good> showbuyerall(int userid) {
-        String sql = "SELECT b.*, g.price * b.number AS totalprice FROM MLbuying b INNER JOIN MLgood g ON b.goodid = g.goodid WHERE b.buyer = ?";
+        String sql = "SELECT b.*, g.price * b.number AS totalprice FROM MLbuying b INNER JOIN MLgood g ON b.goodid = g.goodid WHERE b.buyer = ? AND b.number > 0";
         try {
             return jdbcTemplate.query(sql, BeanPropertyRowMapper.newInstance(Good.class), userid);
         } catch (EmptyResultDataAccessException e) {

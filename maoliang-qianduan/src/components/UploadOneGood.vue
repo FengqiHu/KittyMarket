@@ -1,121 +1,17 @@
 <template>
-  <div v-if="isLoggedIn">
-    <div class="main">
-      <h1>请发布商品</h1>
-      <form @submit.prevent="submitForm">
-      <div class="container">
-        <div class="left-div" style="height: 300px;">
-          <!-- 左侧div -->
-          <!-- 顶部是一个返回按钮 -->
-          <button type="button" @click="goBack">返回</button>
-          <!-- 中间是一个固定尺寸的预览窗口，用于显示用户上传的图片或视频，最多三个,其中每个图片都支持右上角显示x删除 -->
-
-          <div id="preview">
-              <!-- 预览窗口 -->
-              <div v-if="selectedFiles.length > 0">
-                <div v-for="(file, index) in selectedFiles" :key="index" v-show="index === currentPreviewIndex">
-                  <img v-if="isImage(file)" :src="getURL(file)" alt="预览图">
-                  <video v-else controls :src="getURL(file)"></video>
-                  <button @click="removeFile(index)">X</button>
-                </div>
-              </div>
-              <div v-else>
-                没有选择文件
-              </div>
-          </div>
-          <button type="button" @click="prevImage">＜</button>&nbsp;
-          <button type="button" @click="nextImage">＞</button><br>
-
-          <!-- 底部是一个上传按钮，在上传图片为空的时候时它显示的是“上传图片/视频”，在有内容的时候为“继续上传”-->
-          <input type="file" :disabled="isFileInputDisabled" ref="fileInput" @change="handleFileChange" accept="image/png, image/jpeg, video/mp4" multiple style="display: none;">
-          <!-- 添加自定义的上传按钮 -->
-          <button type="button" @click="triggerFileInput">上传图片/视频</button>
-      </div>
-      <div class="right-div">
-            <!-- 右侧div -->
-            <div class="form-group">
-                <label for="kind">商品大类：</label>
-                <select v-model="selectedKind" @change="updateSubcategories">
-                  <option v-for="kind in kinds" :key="kind.value" :value="kind.value">{{ kind.text }}</option>
-                </select><br><br>
-            </div>
-            <div class="form-group">
-              <label for="subkind">商品子类：</label>
-              <select v-model="selectedSubkind">
-                <option v-for="subkind in subkinds" :key="subkind" :value="subkind">{{ subkind }}</option>
-              </select><br><br>
-            </div>
-            <div class="form-group">
-              <label for="goodName">商品名称：</label>
-              <input type="text" v-model="goodName" placeholder="请输入商品名称" required><br><br>
-              <span v-if="errors.goodName" class="error">{{ errors.goodName }}</span>
-            </div>
-            <div class="form-group">
-              <label for="price">商品价格：</label>
-              <input type="number" v-model="price" placeholder="请输入商品价格" required><br><br>
-              <span v-if="errors.price" class="error">{{ errors.price }}</span>
-            </div>
-
-            <div class="form-group">
-              <label for="stock">商品库存：</label>
-              <input type="number" v-model="stock" placeholder="请输入商品库存" required><br><br>
-              <span v-if="errors.stock" class="error">{{ errors.stock }}</span>
-            </div>
-
-            <div class="form-group">
-              <label for="description">商品描述：</label>
-              <input type="text" v-model="description" placeholder="请输入商品描述" required><br><br>
-              <span v-if="errors.description" class="error">{{ errors.description }}</span>
-            </div>
-        </div>
-      </div>
-
-        <div class="container">
-          <div class="left-div">
-            <div class="form-group">
-              <label for="description">卡路里：</label>
-              <input type="text" v-model="calorie" placeholder="请输入商品卡路里cal/g" required><br><br>
-              <span v-if="errors.calorie" class="error">{{ errors.calorie }}</span>
-            </div>
-            <div class="form-group">
-              <label for="description">适用品种：</label>
-              <input type="text" v-model="catkind" placeholder="请输入适用猫咪品种" required><br><br>
-              <span v-if="errors.catkind" class="error">{{ errors.catkind }}</span>
-            </div>
-          </div>
-          <div class="right-div">
-            <div class="form-group">
-              <label for="description">适用体重：</label>
-              <input type="text" v-model="catweight" placeholder="请输入适用猫咪体重" required><br><br>
-              <span v-if="errors.catweight" class="error">{{ errors.catweight }}</span>
-            </div>
-            <div class="form-group">
-              <label for="description">适用年龄：</label>
-              <input type="text" v-model="catage" placeholder="请输入适用猫咪年龄" required><br><br>
-              <span v-if="errors.catage" class="error">{{ errors.catage }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <button type="submit" class="submit-button-container">确认发布</button>
-        </div>
-      </form>
-  </div>
-  </div>
-  <div v-else class="else">
-    您还未登录，请先<a href="login">登录</a>
-  </div>
+<div class="section-heading"><div><h1>发布商品</h1><p>填写商品信息并上传图片或视频。</p></div><el-button @click="goBack">返回商品管理</el-button></div><form class="publish-layout" @submit.prevent="submitForm"><section class="surface upload-surface"><h3>商品图片与视频</h3><div id="preview" class="upload-preview"><template v-if="currentFile"><img v-if="isImage(currentFile)" :src="getURL(currentFile)" alt="上传预览" /><video v-else controls :src="getURL(currentFile)"></video></template><div v-else class="media-fallback"><el-icon><IconPicture /></el-icon><p>添加商品图片或视频</p><small>PNG / JPG / MP4，单个文件不超过 10MB</small></div></div><div class="media-controls"><el-button circle aria-label="上一张" @click="prevImage"><el-icon><IconArrowLeft /></el-icon></el-button><span class="muted">{{ selectedFiles.length ? currentPreviewIndex + 1 : 0 }} / {{ selectedFiles.length }}</span><el-button circle aria-label="下一张" @click="nextImage"><el-icon><IconArrowRight /></el-icon></el-button></div><input type="file" ref="fileInput" :disabled="isFileInputDisabled" @change="handleFileChange" accept="image/png,image/jpeg,video/mp4" multiple hidden /><el-button type="primary" plain class="full-width" :disabled="isFileInputDisabled" @click="triggerFileInput"><el-icon><IconUpload /></el-icon>选择文件（最多 3 个）</el-button><div class="upload-file" v-for="(file,index) in selectedFiles" :key="index"><span>{{ file.name }}</span><el-button text type="danger" aria-label="移除文件" @click="removeFile(index)"><el-icon><IconClose /></el-icon></el-button></div></section><section class="surface"><h3>基本信息</h3><el-form label-position="top"><div class="form-grid"><el-form-item label="商品分类"><el-select v-model="selectedKind" @change="updateSubcategories"><el-option v-for="kind in kinds" :key="kind.value" :value="kind.value" :label="kind.text" /></el-select></el-form-item><el-form-item label="商品子类"><el-select v-model="selectedSubkind"><el-option v-for="kind in subkinds" :key="kind" :value="kind" :label="kind" /></el-select></el-form-item></div><el-form-item label="商品名称"><el-input v-model="goodName" required maxlength="20" placeholder="请输入商品名称" show-word-limit /></el-form-item><div class="form-grid"><el-form-item label="价格（元）"><el-input-number v-model="price" :min="0.01" :precision="2" controls-position="right" /></el-form-item><el-form-item label="库存（件）"><el-input-number v-model="stock" :min="1" :precision="0" controls-position="right" /></el-form-item></div><el-form-item label="商品描述"><el-input v-model="description" type="textarea" :rows="3" required maxlength="100" show-word-limit placeholder="介绍它的特点和适用场景" /></el-form-item><el-divider content-position="left">营养与适用范围</el-divider><div class="form-grid"><el-form-item label="卡路里（cal/g）"><el-input v-model="calorie" required placeholder="例如：3.4" /></el-form-item><el-form-item label="适用品种"><el-input v-model="catkind" required placeholder="例如：波斯猫,布偶猫" /></el-form-item><el-form-item label="适用体重（kg）"><el-input v-model="catweight" required placeholder="例如：1-7" /></el-form-item><el-form-item label="适用年龄（岁）"><el-input v-model="catage" required placeholder="例如：1-10" /></el-form-item></div></el-form><div class="form-actions"><el-button @click="goBack">取消</el-button><el-button type="primary" native-type="submit"><el-icon><IconCheck /></el-icon>确认发布</el-button></div></section></form>
 </template>
 
 <script>
+import { ElMessage } from 'element-plus';
 export default {
   data() {
     return {
       products: [], // 用于存储商品的数组
       isLoggedIn: true, // 这里应从Vuex store或父组件获取
       goodName: '',
-      price: '',
-      stock: '',
+      price: undefined,
+      stock: undefined,
       description: '',
       calorie: '',
       catkind: '',
@@ -166,13 +62,13 @@ export default {
       // 在这里处理表单提交逻辑
       // 验证商品名称长度
       if (this.goodName.length > 20) {
-        alert("商品名称不能超过20个字符");
+        ElMessage.info("商品名称不能超过20个字符");
         return;
       }
 
       // 验证价格为数字
       if (isNaN(this.price)) {
-        alert("价格需要输入数字");
+        ElMessage.info("价格需要输入数字");
         return;
       }
 
@@ -184,38 +80,38 @@ export default {
 
       // 验证商品描述长度
       if (this.description.length > 100) {
-        alert("商品描述不能超过100个字符");
+        ElMessage.info("商品描述不能超过100个字符");
         return;
       }
 
       // 验证至少上传一个文件
       if (this.selectedFiles.length === 0) {
-        alert("请上传至少一个文件");
+        ElMessage.info("请上传至少一个文件");
         return;
       }
 
       // 验证卡路里
       const calorieValue = parseFloat(this.calorie);
       if (isNaN(calorieValue) || calorieValue <= 0 || calorieValue >= 100) {
-        alert('卡路里需为大于0小于100的数字');
+        ElMessage.info('卡路里需为大于0小于100的数字');
         return;
       }
 
       // 验证适用品种
       if (!this.catkind.trim().match(/^[\u4e00-\u9fa5,]+$/)) {
-        alert('适用品种格式不正确');
+        ElMessage.info('适用品种格式不正确');
         return;
       }
 
       // 验证适用体重
       if (!this.catweight.trim().match(/^\d+(\.\d+)?-\d+(\.\d+)?$/)) {
-        alert('适用体重格式不正确，需为数字-数字');
+        ElMessage.info('适用体重格式不正确，需为数字-数字');
         return;
       }
 
       // 验证适用年龄
       if (!this.catage.trim().match(/^\d+(\.\d+)?-\d+(\.\d+)?$/)) {
-        alert('适用年龄格式不正确，需为数字-数字');
+        ElMessage.info('适用年龄格式不正确，需为数字-数字');
         return;
       }
 
@@ -280,7 +176,7 @@ export default {
       console.log(validFiles);
       // 如果有不支持的文件类型，提醒用户并返回
       if (validFiles.length < files.length) {
-        alert("不支持的文件格式。请上传png、jpg或mp4格式的文件。");
+        ElMessage.info("不支持的文件格式。请上传png、jpg或mp4格式的文件。");
         return;
       }
 
@@ -292,27 +188,27 @@ export default {
 
       // 检查文件数量
       if (files.length > maxFiles) {
-        alert(`您只能上传最多 ${maxFiles} 个文件。`);
+        ElMessage.info(`您只能上传最多 ${maxFiles} 个文件。`);
         return;
       }
 
       // 检查文件大小
       const isAnyFileTooLarge = files.some(file => file.size > maxSize);
       if (isAnyFileTooLarge) {
-        alert("所有文件必须小于10MB，请重新选择文件。");
+        ElMessage.info("所有文件必须小于10MB，请重新选择文件。");
       return;
       }
-      
+
       // 如果选择的文件超过3个，提醒用户
       if (this.selectedFiles.length + newFiles.length > 3) {
-        alert("最多只能上传3个文件。");
+        ElMessage.info("最多只能上传3个文件。");
         return;
       }
 
     //  console.log(validFiles);
 
       // 更新selectedFiles数组，只包含到3个文件的限制
-      this.selectedFiles = [...this.selectedFiles, ...validFiles];
+      this.selectedFiles = [...this.selectedFiles, ...newFiles];
    //   console.log(this.selectedFiles);
 
       // 更新input file控件以反映文件的更改
@@ -337,8 +233,9 @@ export default {
       this.$router.go(-1);
     },
     removeFile(index) {
-      URL.revokeObjectURL(this.selectedFiles[index]); // 释放内存中的URL
-      this.selectedFiles.splice(index, 1); // 从数组中移除选定文件
+      // File objects are managed by the browser.
+      this.selectedFiles.splice(index, 1);
+      this.currentPreviewIndex = Math.max(0, Math.min(this.currentPreviewIndex, this.selectedFiles.length - 1)); // 从数组中移除选定文件
 
       // 如果现在少于3个文件，确保input是可用的
       if (this.selectedFiles.length < 3 && this.$refs.fileInput) {
@@ -385,242 +282,3 @@ export default {
   },
 };
 </script>
-
-<!-- 未登录框 -->
-<style type="text/css" scoped>
-.else{
-position:absolute;
-top:40%;
-left:50%;
-transform:translate(-50%,-50%);
-width:450px;
-padding:30px;
-background: rgba(224,224,224,.8);
-box-sizing:border-box;
-box-shadow: 0px 15px 25px rgba(0,0,0,.5);
-border-radius:16px;
-text-align:center;
-font-family:KaiTi;
-font-size:26px;
-}
-a{
-	text-decoration:none;
-}
-</style>
-<style scoped>
-#a{
-
-    width:100%;
-    height:200px;
-    text-align:center;
-}
-#b{
-    text-align:center;
-    color: red;
-    font-size: 22px;
-    font-family:KaiTi;
-}
-a{
-	text-decoration:none;
-}
-body {
-	background-image:url(~@/assets/img/beijing2.jpg);
-	font-family: KaiTi;
-	background-size: cover; 
-	margin:0px;
-	padding:0px;
-}
-
-h2{
-	text-align:center;
-	font-family:KaiTi;
-}
-
-.main{
-    justify-content: space-between;
-    max-width: 500px;
-    margin: 50px auto;
-    border: 2px solid #00BFFF;
-    border-radius: 15px; 
-    background-color: white;
-    padding: 30px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    background: #C0C0C0;
-    }
-.main h1{
-	font-size: 24px;
-	font-family:KaiTi;
-	text-align:center;
-    padding: 8px 0px 16px 10px;
-    color:black;
-    border-bottom: 30px;
-    }
-.text1{
-     margin-left: 3px;
-     }
-.main label>span{
-     width: 30%;
-     display: inline-block;
-     text-align: left;
-     padding-right: 10px;
-     margin-bottom: 10px;
-     }
-.main input[type="text"],
-.main input[type="file"]{
-     width: 65%;  /* 调整宽度 */
-     padding: 10px;  /* 增加内边距 */
-     border: 1px solid #DCDCDC;
-     border-radius: 5px; 
-}
-
-.main .button
-.main button{
-    width: 65%;  /* 调整宽度 */
-        padding: 10px;  /* 增加内边距 */
-        border: 1px solid #DCDCDC;
-        border-radius: 5px; 
-}
-.main button {
-    background-color: #FFD700;  /* 黄色按钮 */
-}
-.main .button:hover{
-     color:  #333;
-     background-color:  #EBEBEB ;
-}
-button{
-     padding: 8px 24px 8px 24px;
-     margin-top: 1px;
-     margin-bottom: 8px;
-     border: none;
-     border-radius: 4px;
-     -moz-border-radius: 4px;
-     -webkit-border-radius: 4px;
-     font-weight: bold;
-     text-shadow: 1px 1px 1px #FFE477;
-     box-shadow: 1px 1px 1px  #3D3D3D;
-     -moz-box-shadow: 1px 1px 1px  #3D3D3D;
-     -webkit-box-shadow: 1px 1px 1px  #3D3D3D;
-     color: #585858;
-     background: #f6ff0a;
-      cursor: pointer
-}
-.container {
-    display: flex; /* 使用flex布局 */
-}
-.left-div, .right-div {
-    flex: 1; /* 不伸展，不收缩，基础宽度为210px */
-    padding: 20px; /* 添加一些内边距 */
-}
-#pictureInput {
-    bottom: 0px;
-    left: 0%;
-    border: none;
-}
-
-#imagePreview {
-    width: 100%; /* 设置图片宽度为100% */
-    object-fit: contain; /* 保证图片始终在边框内且保持其原始的宽高比 */
-    display: block;  
-    position: relative;
-    opacity: 0;
-}
-.left-div center {
-    width: 240px; /* 您可以根据需要调整此值 */
-    height: 220px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.submit-button-container {
-    margin-bottom: 200px;  /* adjust this value to achieve desired positioning */
-    margin-left: 70px;
-    padding: 8px 24px 8px 24px;
-     margin-bottom: 8px;
-     border: none;
-     border-radius: 4px;
-     -moz-border-radius: 4px;
-     -webkit-border-radius: 4px;
-     font-weight: bold;
-     text-shadow: 1px 1px 1px #FFE477;
-     box-shadow: 1px 1px 1px  #3D3D3D;
-     -moz-box-shadow: 1px 1px 1px  #3D3D3D;
-     -webkit-box-shadow: 1px 1px 1px  #3D3D3D;
-     color: #585858;
-     background-color: rgb(255, 215, 0);
-      cursor: pointer;
-}
-.modal {
-        display: none; /* 默认隐藏 */
-        position: fixed; /* 固定在页面上 */
-        z-index: 1; /* 处于顶层 */
-        left: 0;
-        top: 0;
-        width: 100%; /* 宽度为整个屏幕 */
-        height: 100%; /* 高度为整个屏幕 */
-        overflow: auto; /* 如果内容过多则启用滚动条 */
-        background-color: rgba(0,0,0,0.4); /* 半透明的黑色背景 */
-        padding-top: 60px;
-    }
-   .modal-content {
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    width: 60%;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.close:hover {
-    color: #000;
-    text-decoration: none;
-}
-    .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    
-    .price-modal-content {
-    background-image: url('~@/assets/img/a.jpg'); /* 更改为您自己的图片路径 */
-    background-size: cover; /* 调整背景图片大小以填充整个容器 */
-    background-position: center; /* 居中显示背景图片 */
-    opacity: 1; /* 调整透明度（0.8表示80%的不透明度） */
-}
-#preview {
-    /* 设置预览窗口的大小和样式 */
-    width: 200px;
-    height: 200px;
-    border: 1px solid #ccc;
-    position: relative;
-    overflow: hidden;
-}
-
-#preview img {
-    /* 设置图片的大小和位置 */
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-#preview button {
-    /* 设置删除按钮的样式和位置 */
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.5);
-    border: none;
-
-}
-
-</style>
