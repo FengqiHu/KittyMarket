@@ -1,0 +1,5 @@
+.local/
+
+# Compiled output from the legacy A/B projects, including nested copies.
+**/KittyStore_A/build/
+**/KittyStore_B/build/
