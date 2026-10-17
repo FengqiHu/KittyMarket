@@ -31,8 +31,9 @@ public class CatRepository {
     }
 
     public Cat findCatById(int owner) {
-        String sql = "SELECT * FROM MLcat WHERE owner = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{owner}, new BeanPropertyRowMapper<>(Cat.class));
+        String sql = "SELECT * FROM MLcat WHERE owner = ? ORDER BY catid LIMIT 1";
+        List<Cat> cats = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Cat.class), owner);
+        return cats.isEmpty() ? null : cats.get(0);
     }
 
     public List<Good> findGoodsByCatAge(int newcatage) {
@@ -135,20 +136,25 @@ public class CatRepository {
 
 
     public void save(Cat cat) {
-        String sql = "INSERT INTO MLcat (catid, catname, description, catweight, catstate, catage, catkind, owner) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, cat.getCatid(), cat.getCatname(), cat.getDescription(),
+        String sql = "INSERT INTO MLcat (catname, description, catweight, catstate, catage, catkind, owner) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, cat.getCatname(), cat.getDescription(),
                 cat.getCatweight(), cat.getCatstate(), cat.getCatage(), cat.getCatkind(), cat.getOwner());
     }
 
-    public void update(Cat cat) {
-        String sql = "UPDATE MLcat SET catweight = ?, catstate = ?, catage = ? WHERE catid = ?";
-        jdbcTemplate.update(sql, cat.getCatweight(), cat.getCatstate(), cat.getCatage(), cat.getCatid());
+    public int update(Cat cat) {
+        String sql = "UPDATE MLcat SET catname = ?, description = ?, catkind = ?, catage = ?, catweight = ?, catstate = ? WHERE catid = ? AND owner = ?";
+        return jdbcTemplate.update(sql, cat.getCatname(), cat.getDescription(), cat.getCatkind(),
+                cat.getCatage(), cat.getCatweight(), cat.getCatstate(), cat.getCatid(), cat.getOwner());
+    }
+
+    public int delete(int catid, int owner) {
+        return jdbcTemplate.update("DELETE FROM MLcat WHERE catid = ? AND owner = ?", catid, owner);
     }
 
 
     public List<Cat> findByOwner(int ownerId) {
-        String sqlQuery = "SELECT * FROM MLcat WHERE owner = ?";
+        String sqlQuery = "SELECT * FROM MLcat WHERE owner = ? ORDER BY catid DESC";
         return jdbcTemplate.query(sqlQuery, new Object[]{ownerId}, (rs, rowNum) -> {
             Cat cat = new Cat();
             cat.setCatid(rs.getInt("catid"));
