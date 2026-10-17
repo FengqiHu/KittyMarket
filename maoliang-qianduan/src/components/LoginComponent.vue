@@ -7,7 +7,6 @@
   <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon class="form-alert" />
   <el-button type="primary" native-type="submit" class="full-width" :loading="loading">登录<el-icon class="icon-after"><IconArrowRight /></el-icon></el-button>
   <div class="auth-register">还没有账号？<router-link to="/register">立即注册</router-link></div>
-  <el-divider>游客入口</el-divider><el-button class="full-width" @click="$router.push('/buyer')">浏览商品<el-icon class="icon-after"><IconShop /></el-icon></el-button>
 </el-form>
 <el-result v-else icon="success" title="你已登录" sub-title="请选择进入商城或商家后台。"><template #extra><el-button type="primary" @click="$router.push(adminRoute)">进入{{ isSeller ? '商家工作台' : '商城' }}</el-button><el-button @click="handleLogout">切换账号</el-button></template></el-result>
 </AuthLayout>

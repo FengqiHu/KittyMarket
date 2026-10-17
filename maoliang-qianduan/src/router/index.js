@@ -11,7 +11,6 @@ const ShowHistoryGoods = () => import('@/components/ShowHistoryGoods.vue');
 const ShowAllUsers = () => import('@/components/ShowAllUsers.vue');
 const UploadMultipleGoods = () => import('@/components/UploadMultipleGoods.vue');
 const ForgotPasswordComponent = () => import('@/components/ForgotPasswordComponent.vue');
-const GuestComponent = () => import('@/components/GuestComponent.vue');
 const UserOrderHistory = () => import('@/components/UserOrderHistory.vue');
 const SuccessComponent = () => import('@/components/SuccessComponent.vue');
 const SecretQuestionComponent = () => import('@/components/SecretQuestionComponent.vue');
@@ -32,7 +31,7 @@ const BuyerAfterSale = () => import('@/components/BuyerAfterSale.vue');
 const BuyerPay = () => import('@/components/BuyerPay.vue');
 
 const routes = [
-  { path: '/', component: LoginComponent },
+  { path: '/', redirect: '/buyer' },
   { path: '/login', component: LoginComponent },
   { path: '/error', component: ErrorComponent },
   { path: '/register', component: RegisterComponent },
@@ -108,11 +107,7 @@ const routes = [
     name: 'ForgotPasswordComponent',
     component: ForgotPasswordComponent // 替换为您的实际组件
   },
-  {
-    path: '/guest',
-    name: 'GuestComponent',
-    component: GuestComponent // 替换为您的实际组件
-  },
+  { path: '/guest', redirect: '/buyer' },
   {
     path: '/success',
     name: 'Success',
