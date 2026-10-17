@@ -29,6 +29,9 @@ public class OrderService {
     @Autowired
     private GoodRepository goodRepository;
 
+    @Autowired
+    private HotGoodsCache hotGoodsCache;
+
     @Transactional
     public Order createOrder(CreateOrderData request, Usr buyer) {
         if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
@@ -58,6 +61,7 @@ public class OrderService {
         if (Boolean.TRUE.equals(request.fromCart())) {
             goodRepository.consumeCart(good.getGoodid(), buyer.getUserid(), request.number());
         }
+        hotGoodsCache.invalidateAfterCommit();
         return order;
     }
 
@@ -77,6 +81,7 @@ public class OrderService {
 
     public void deletegood(int goodid) {
         orderRepository.deletegood(goodid);
+        hotGoodsCache.invalidateAfterCommit();
     }
 
     @Transactional
@@ -91,15 +96,20 @@ public class OrderService {
         if (!goodRepository.updateGoodNumber(order.getNumber(), order.getGoodid())) {
             throw new IllegalStateException("取消订单时恢复库存失败");
         }
+        hotGoodsCache.invalidateAfterCommit();
         return true;
     }
 
     public boolean confirmOrder(int orderid, int orderstate) {
-        return orderListRepository.confirmOrder(orderid, orderstate);
+        boolean updated = orderListRepository.confirmOrder(orderid, orderstate);
+        if (updated) hotGoodsCache.invalidateAfterCommit();
+        return updated;
     }
 
     public boolean buyerhistoryconfirmOrder(int orderid, int orderstate) {
-        return orderListRepository.buyerhistoryconfirmOrder(orderid, orderstate);
+        boolean updated = orderListRepository.buyerhistoryconfirmOrder(orderid, orderstate);
+        if (updated) hotGoodsCache.invalidateAfterCommit();
+        return updated;
     }
 
     public List<Order> showbuyerorderinfo(String name) {

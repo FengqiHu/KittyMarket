@@ -28,6 +28,21 @@ public class GoodListRepository {
         }
     }
 
+    public List<Good> showHotGoods() {
+        // Aggregate separately so joining orders and favourites cannot multiply sales.
+        String sql = """
+                SELECT g.* FROM MLgood g
+                LEFT JOIN (SELECT goodid, SUM(number) AS sales FROM MLorder
+                           WHERE orderstate > 0 GROUP BY goodid) o ON o.goodid = g.goodid
+                LEFT JOIN (SELECT goodid, COUNT(DISTINCT buyer) AS favourites FROM MLbuying
+                           WHERE islike = 1 GROUP BY goodid) b ON b.goodid = g.goodid
+                WHERE g.state = 0 AND g.number > 0
+                ORDER BY COALESCE(o.sales, 0) DESC, COALESCE(b.favourites, 0) DESC, g.goodid DESC
+                LIMIT 8
+                """;
+        return jdbcTemplate.query(sql, BeanPropertyRowMapper.newInstance(Good.class));
+    }
+
 
     public List<Good> searchls(String keyword, String kind, int power, int userid, int ishistory) {
         StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM ");

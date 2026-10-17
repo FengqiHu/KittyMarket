@@ -1,4 +1,13 @@
 <template>
+<section v-if="hotItems.length" class="hot-goods-section" aria-labelledby="hot-goods-title">
+  <div class="section-heading"><div><h2 id="hot-goods-title">热门商品</h2><p>按销量与收藏人气精选</p></div><span class="muted">人气好物 · TOP {{ hotItems.length }}</span></div>
+  <div class="product-grid">
+    <article v-for="(item, index) in hotItems" :key="item.goodid" class="product-card">
+      <button class="product-cover" @click="postToBuyerShop(item.goodid)"><ProductMedia :path="item.picture" :alt="item.goodname" /><span class="product-category">人气 TOP {{ index + 1 }}</span></button>
+      <div class="product-card-body"><span class="product-kicker">{{ item.kind }}</span><h3>{{ item.goodname }}</h3><p>{{ item.description }}</p><div class="product-card-bottom"><span class="product-price"><small>¥</small>{{ Number(item.price).toFixed(2) }}</span><el-button size="small" @click="postToBuyerShop(item.goodid)">查看详情</el-button></div></div>
+    </article>
+  </div>
+</section>
 <div class="section-heading"><div><h1>全部商品</h1><p>猫咪主粮、零食与日常用品</p></div><el-button @click="$router.push('/buyer-show-recommend')">根据猫咪档案选粮<el-icon class="icon-after"><IconArrowRight /></el-icon></el-button></div>
 <form class="search-toolbar surface" @submit.prevent="handleSearch"><el-input v-model="searchQuery" placeholder="输入商品名称" size="large" clearable><template #prefix><el-icon><IconSearch /></el-icon></template></el-input><el-select v-model="selectedCategory" size="large" aria-label="商品分类"><el-option v-for="category in ['猫咪主粮','猫咪零食','猫咪日用']" :key="category" :label="category" :value="category" /></el-select><el-button type="primary" native-type="submit" size="large">搜索</el-button></form>
 <div class="category-toolbar"><div class="category-tabs" aria-label="商品分类"><button v-for="category in ['全部','猫咪主粮','猫咪零食','猫咪日用']" :key="category" :class="{ 'is-active': categoryView === category }" :aria-pressed="categoryView === category" @click="filterCategory(category)">{{ category }}</button></div><span class="muted">共 {{ filteredItems.length }} 件商品</span></div>
@@ -15,6 +24,7 @@ export default {
   data() {
     return {
       items: [ ],
+      hotItems: [],
       loading: true, loadError: '',
      searchQuery: '',
      categoryView: '全部',
@@ -35,6 +45,7 @@ export default {
   },
   async mounted() {
     console.log('BuyerMain 组件已挂载');
+    this.fetchHotGoods();
     await this.fetchgoodListSession(); // 等待 fetchgoodListSession 完成!!
     this.filterCategory(this.categoryView); // 初始时显示所有商品
   },
@@ -68,6 +79,15 @@ export default {
     }
   },
   methods: {
+    async fetchHotGoods() {
+      try {
+        const response = await axios.get('/good/hot-goods');
+        this.hotItems = response.data.data || [];
+      } catch (error) {
+        this.hotItems = [];
+        console.error('获取热门商品失败:', error);
+      }
+    },
     filterCategory(category) {
       this.categoryView = category;
       this.filteredItems = category === '全部' ? this.items : this.items.filter(item => item.kind === category);

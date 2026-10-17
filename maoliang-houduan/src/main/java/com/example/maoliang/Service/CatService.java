@@ -44,7 +44,10 @@ public class CatService {
         // 取 goodsByWeight、goodsByAge 和 goodsByKind 的交集
         filteredGoods.retainAll(goodsByAge);
         filteredGoods.retainAll(goodsByKind);
-
+        // The catalogue also contains treats and daily supplies; recommend only edible staple food.
+        filteredGoods.removeIf(good -> !"猫咪主粮".equals(good.getKind())
+                || good.getCalorie() <= 0 || !Double.isFinite(good.getCalorie())
+                || good.getState() != 0 || good.getNumber() <= 0);
 
         // 如果商品超过三个，随机取出三个
         Collections.shuffle(filteredGoods);

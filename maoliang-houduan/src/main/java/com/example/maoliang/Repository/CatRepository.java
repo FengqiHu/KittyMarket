@@ -36,7 +36,7 @@ public class CatRepository {
     }
 
     public List<Good> findGoodsByCatAge(int newcatage) {
-        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight FROM MLgood " +
+        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight, kind, state, number FROM MLgood " +
                 "WHERE CAST(SUBSTRING(catage, 1, POSITION('-' IN catage) - 1) AS SIGNED) <= ? " +
                 "AND CAST(SUBSTRING(catage, POSITION('-' IN catage) + 1) AS SIGNED) >= ?";
 
@@ -53,6 +53,9 @@ public class CatRepository {
                     good.setPicture(rs.getString("picture"));
                     good.setCalorie(rs.getDouble("calorie"));
                     good.setCatweight(rs.getString("catweight"));
+                    good.setKind(rs.getString("kind"));
+                    good.setState(rs.getInt("state"));
+                    good.setNumber(rs.getInt("number"));
                     return good;
                 }
             });
@@ -64,7 +67,7 @@ public class CatRepository {
     }
 
     public List<Good> findGoodsByCatWeight(double newcatweight) {
-        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight FROM MLgood " +
+        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight, kind, state, number FROM MLgood " +
                 "WHERE CAST(SUBSTRING(catweight, 1, POSITION('-' IN catweight) - 1) AS DOUBLE) <= ? " +
                 "AND CAST(SUBSTRING(catweight, POSITION('-' IN catweight) + 1) AS DOUBLE) >= ?";
 
@@ -81,6 +84,9 @@ public class CatRepository {
                     good.setPicture(rs.getString("picture"));
                     good.setCalorie(rs.getDouble("calorie"));
                     good.setCatweight(rs.getString("catweight"));
+                    good.setKind(rs.getString("kind"));
+                    good.setState(rs.getInt("state"));
+                    good.setNumber(rs.getInt("number"));
                     return good;
                 }
             });
@@ -93,7 +99,7 @@ public class CatRepository {
     }
 
     public List<Good> findGoodsByCatKind(String catkind) {
-        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight " +
+        String sqlQuery = "SELECT goodid, goodname, price, picture, calorie, catweight, kind, state, number " +
                 "FROM MLgood " +
                 "WHERE catkind LIKE ?";
 
@@ -113,6 +119,9 @@ public class CatRepository {
                     good.setPicture(rs.getString("picture"));
                     good.setCalorie(rs.getDouble("calorie"));
                     good.setCatweight(rs.getString("catweight"));
+                    good.setKind(rs.getString("kind"));
+                    good.setState(rs.getInt("state"));
+                    good.setNumber(rs.getInt("number"));
                     return good;
                 }
             });

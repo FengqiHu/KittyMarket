@@ -21,9 +21,17 @@ public class GoodService {
     @Autowired
     GoodListRepository goodListRepository;
 
+    @Autowired
+    private HotGoodsCache hotGoodsCache;
+
+    public List<Good> showHotGoods() {
+        return hotGoodsCache.getOrLoad(goodListRepository::showHotGoods);
+    }
+
     public void modifyLike(int goodId, int userId, int nowLike) {
         // 数据库操作
         goodRepository.modifylike(goodId, userId, nowLike); // 根据 nowLike 参数执行相应操作
+        hotGoodsCache.invalidateAfterCommit();
     }
 
     public Good showGood(int goodid) {
@@ -56,14 +64,19 @@ public class GoodService {
 
     public void add(Good g) {
         goodRepository.add(g);
+        hotGoodsCache.invalidateAfterCommit();
     }
 
     public int remove(int goodid) {
-        return goodRepository.remove(goodid);
+        int removed = goodRepository.remove(goodid);
+        if (removed > 0) hotGoodsCache.invalidateAfterCommit();
+        return removed;
     }
 
     public boolean updateGood(Good g) {
-        return goodRepository.updateGood(g);
+        boolean updated = goodRepository.updateGood(g);
+        if (updated) hotGoodsCache.invalidateAfterCommit();
+        return updated;
     }
 
     public int findCart(int goodId, int buyer) {
@@ -80,6 +93,7 @@ public class GoodService {
 
     public void addToLike(int goodId, int buyer) {
         goodRepository.addtolike(goodId, buyer);
+        hotGoodsCache.invalidateAfterCommit();
     }
 
     public List<Map<String, Object>> showBuyerCart(int userId) {
@@ -106,9 +120,11 @@ public class GoodService {
 
     public void cancelLike(int goodId,int userid) {
         goodRepository.cancellike(goodId,userid);
+        hotGoodsCache.invalidateAfterCommit();
     }
     public void removeBuyingItem(int buyingId,int userid) {
         goodRepository.removebuyingitem(buyingId,userid);
+        hotGoodsCache.invalidateAfterCommit();
     }
 
 

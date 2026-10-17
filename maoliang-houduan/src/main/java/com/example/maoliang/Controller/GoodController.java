@@ -119,6 +119,11 @@ public class GoodController {
         return new Result(BUYER_ALL_GOODS_PAGE, null, goodList);
     }
 
+    @GetMapping("/hot-goods")
+    public Result hotGoods() {
+        return new Result(BUYER_ALL_GOODS_PAGE, null, goodService.showHotGoods());
+    }
+
     @RequestMapping("/seller-all-good-list-control")
     public Result sellerAllGoodList() {
         Usr currentUsr = (Usr) session.getAttribute("admin");

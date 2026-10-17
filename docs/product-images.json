@@ -1,0 +1,162 @@
+{
+  "tool": "built-in image_gen",
+  "purpose": "Unique generated catalogue photographs for the 26 demo products",
+  "products": [
+    {
+      "name": "猫干粮",
+      "description": "美味猫干粮",
+      "image": "/demo/products/dry-cat-food.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: a premium generic bag of dry cat kibble (猫干粮), with a small neat pile of brown dry kibble beside it, clearly dry food rather than canned food. Warm off-white seamless studio background, soft diffused light and realistic soft ground shadow, three-quarter product view, centered object fully visible with generous margin, natural realistic packaging and food texture, clean commercial photography. Minimal cream packaging with a simple cat silhouette and a restrained terracotta accent. Do not include readable text, brand names, logos, labels with claims, watermarks, people or real cats. One product composition only, no collage or grid. Output a square image."
+    },
+    {
+      "name": "猫湿粮",
+      "description": "美味猫湿粮",
+      "image": "/demo/products/wet-cat-food.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A low silver tin of moist cat food with its peel lid lifted, showing juicy shredded meat in gravy, beside a small cream food dish; subtle muted sage paper sleeve. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "鲜鸡肉全价成猫粮",
+      "description": "鲜鸡肉配方，颗粒酥脆，2kg 日常装。",
+      "image": "/demo/products/chicken-adult-kibble.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A sturdy 2 kg cream resealable bag of adult chicken cat kibble with a restrained golden ochre accent and a tiny chicken illustration, a small ceramic dish of dry kibble and two cooked chicken pieces beside the bag. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "三文鱼亮毛猫粮",
+      "description": "三文鱼与鱼油搭配，1.5kg 装。",
+      "image": "/demo/products/salmon-coat-kibble.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A premium cream and muted coral 1.5 kg resealable cat food bag with a subtle salmon fish illustration, a small pile of brown dry kibble and a fresh pink salmon portion showing its distinct white marbling beside it. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "幼猫成长鸡肉粮",
+      "description": "细小颗粒，适合幼猫咀嚼，1kg 装。",
+      "image": "/demo/products/kitten-chicken-kibble.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A compact 1 kg cream and soft butter-yellow kitten chicken food bag, a small kitten silhouette printed on the bag, a shallow dish displaying visibly tiny fine round dry kibble suitable for kittens. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "室内成猫火鸡粮",
+      "description": "火鸡肉风味，室内猫日常主食，2kg 装。",
+      "image": "/demo/products/indoor-turkey-kibble.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A substantial 2 kg cream and dusty olive resealable adult indoor cat food bag with a subtle turkey bird motif, brown kibble and a small cooked turkey meat portion beside it. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "高龄猫软颗粒粮",
+      "description": "易咀嚼软颗粒，500g 小袋装。",
+      "image": "/demo/products/senior-soft-kibble.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small 500 g matte cream and muted lavender senior cat food pouch, a tiny calm cat silhouette on the package, a shallow bowl showing soft rounded moist semi-soft food pellets, clearly soft food rather than hard dry kibble. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "鸡肉南瓜主食罐",
+      "description": "鸡肉与南瓜搭配，85g 单罐装。",
+      "image": "/demo/products/chicken-pumpkin-can.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One open small 85 g silver cat food can with a warm pale-orange paper sleeve, visible shredded chicken and small orange pumpkin pieces inside, a small cooked chicken piece and two pumpkin cubes beside it. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "金枪鱼主食罐",
+      "description": "细腻鱼肉口感，85g 单罐装。",
+      "image": "/demo/products/tuna-meal-can.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One small 85 g open silver cat food can with a muted ocean-blue sleeve, fine pale pink tuna flakes visible inside, its peel lid folded back; a small separate serving of tuna flakes beside the tin. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "鸭肉鲜食餐包",
+      "description": "鸭肉鲜食风味，70g 便携餐包。",
+      "image": "/demo/products/duck-meal-pouch.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One slender 70 g cream and muted plum cat fresh-food stand-up pouch with a tiny duck illustration, a shallow white dish of moist cooked duck shreds in gravy placed beside it. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "冻干鸡胸肉粒",
+      "description": "单一鸡肉原料，40g 零食装。",
+      "image": "/demo/products/freeze-dried-chicken.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small 40 g resealable pouch with cream and warm tan design and a clear window, surrounded by a few irregular pale ivory freeze-dried chicken breast cubes, visibly dry porous fibrous texture. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "冻干鹌鹑蛋黄",
+      "description": "酥松蛋黄小粒，30g 装，少量奖励。",
+      "image": "/demo/products/freeze-dried-quail-yolk.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small clear jar with a simple cream lid filled with small golden yellow freeze-dried quail egg yolk spheres, several porous golden yolk balls outside the jar and two small speckled quail eggs nearby. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "三文鱼冻干块",
+      "description": "小块鱼肉冻干，35g 装。",
+      "image": "/demo/products/freeze-dried-salmon.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small cream and dusty salmon-pink 35 g resealable pouch with a clear window, scattered small salmon-pink freeze-dried fish cubes with porous texture and slight silver skin edges. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "鸡肉慕斯猫条",
+      "description": "细腻慕斯质地，12g × 6 支。",
+      "image": "/demo/products/chicken-mousse-tubes.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: Exactly six slender cream and soft gold individual cat treat sachet tubes in a neat fan, one tube opened with a small creamy beige chicken mousse extrusion at the tip; compact product composition. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "金枪鱼鲜肉猫条",
+      "description": "鱼肉风味奖励零食，12g × 6 支。",
+      "image": "/demo/products/tuna-treat-tubes.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: Exactly six slender cream and muted blue individual tuna cat treat sachet tubes in a neat fan, one tube open with a tiny pale pink tuna puree at the tip; small fish silhouette motifs on sachets. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "磨牙鸡肉小饼干",
+      "description": "鸡肉风味小饼干，60g 装。",
+      "image": "/demo/products/chicken-cat-biscuits.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small cream and terracotta 60 g snack pouch with a clear lower window, a pile of golden brown bite-sized cat biscuits in small fish and round shapes beside it, crisp baked texture. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "猫草种植小套装",
+      "description": "种子、基质与种植盒组合，按说明培育。",
+      "image": "/demo/products/cat-grass-kit.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A complete cat grass growing kit: a compact cream rectangular planter growing dense fresh bright green young grass blades, a small kraft envelope of grass seeds and a wrapped soil disc neatly beside it. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "鲜虾鸡肉奖励粒",
+      "description": "鸡肉与鲜虾风味，45g 训练奖励装。",
+      "image": "/demo/products/shrimp-chicken-rewards.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A small cream and muted apricot 45 g cat treat pouch with a clear window, tiny peach-beige shrimp and chicken reward nuggets neatly piled beside it, a single small cooked peeled shrimp as an ingredient cue. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "原味豆腐猫砂",
+      "description": "低粉尘豆腐猫砂，6L 袋装。",
+      "image": "/demo/products/tofu-cat-litter.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A large cream and pale sage 6 liter bag of tofu cat litter with a clear lower window, a small tidy mound of ivory cylindrical plant-fiber litter pellets at its base, visibly litter pellets rather than food. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "混合除味猫砂",
+      "description": "豆腐砂与矿砂混合，6L 袋装。",
+      "image": "/demo/products/mixed-cat-litter.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A large cream and dusty blue-gray 6 liter resealable cat litter bag, a neat small mound showing a realistic mix of long ivory tofu litter pellets and small gray bentonite mineral grains. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "开放式加高猫砂盆",
+      "description": "加高围边，附猫砂铲，易拆洗。",
+      "image": "/demo/products/high-sided-litter-box.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One open-top cat litter tray with tall sage-green sides and a lowered cream front entry lip, a light shallow layer of ivory litter inside, one matching slotted cat litter scoop resting neatly beside the tray. Clearly a large pet litter box, not a bowl. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "陶瓷斜口猫碗",
+      "description": "陶瓷材质，斜口设计，容量约 300ml。",
+      "image": "/demo/products/tilted-ceramic-bowl.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One cream glazed ceramic cat feeding bowl with a visibly tilted oval opening and an integrated raised pedestal, about 300 ml capacity, entirely empty so the slanted opening and smooth glaze are clear. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "不锈钢双碗套装",
+      "description": "双碗可拆卸，底座防滑，便于清洗。",
+      "image": "/demo/products/stainless-double-bowls.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: A matching pair of polished brushed stainless-steel removable cat feeding bowls seated in one warm gray anti-slip double-bowl base. Both bowls empty, realistic metal reflections and rubber base details, three-quarter product view. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "羽毛逗猫棒",
+      "description": "可替换羽毛头，适合陪伴互动。",
+      "image": "/demo/products/feather-cat-wand.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One elegant cat teaser toy: a thin natural wood wand laid diagonally, a light flexible cord gently curved beside it, a replaceable cluster of natural cream and rust-orange feathers connected at the end, a small brass bell. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "瓦楞纸猫抓板",
+      "description": "双面可用瓦楞纸抓板，约 45cm。",
+      "image": "/demo/products/corrugated-cat-scratcher.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One approximately 45 cm long rectangular reversible corrugated cardboard cat scratching pad in a shallow natural kraft cardboard frame, dense exposed honeycomb corrugation clearly visible, low simple rectangular silhouette. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    },
+    {
+      "name": "柔软猫咪睡垫",
+      "description": "可清洗柔软睡垫，约 50 × 40cm。",
+      "image": "/demo/products/soft-cat-sleep-mat.webp",
+      "prompt": "Use case: product-mockup. Asset type: one square e-commerce catalogue product photograph for a cat supplies store. Primary request: One soft rectangular cat sleeping mat approximately 50 by 40 cm, warm oatmeal fleece top with plush piped border and a subtle dusty sage fabric underside visible at one gently folded corner. Realistic soft fabric texture and stitching, clearly a flat sleeping pad. Scene/backdrop: warm off-white seamless studio surface and background. Style: photorealistic premium commercial product photography, realistic material and food textures, soft diffused light, gentle contact shadow, clean warm neutral colors. Composition: one centered product composition, three-quarter view, every item entirely visible with generous margins, product occupies about 70 percent of the frame. Constraints: accurate product type and described quantities; no readable words, brand names, logos, nutrition claims, watermark, people, real cats, collages, grids or unrelated decorative props. Square image."
+    }
+  ]
+}

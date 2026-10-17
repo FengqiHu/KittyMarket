@@ -272,7 +272,8 @@ h1, h2, h3 {
   gap: 16px;
 }
 
-.section-heading h1 {
+.section-heading h1,
+.section-heading h2 {
   font-size: 22px;
   font-weight: 600;
   margin-bottom: 6px;
@@ -482,6 +483,10 @@ h1, h2, h3 {
 
 .role-choices .el-button {
   margin-left: 0;
+}
+
+.hot-goods-section {
+  margin-bottom: 40px;
 }
 
 .product-grid {
