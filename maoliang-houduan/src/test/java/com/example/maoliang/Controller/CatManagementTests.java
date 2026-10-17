@@ -3,6 +3,7 @@ package com.example.maoliang.Controller;
 import com.example.maoliang.Entity.Cat;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Service.CatService;
+import com.example.maoliang.Service.CatalogRagService;
 import com.example.maoliang.dto.CatRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,22 @@ class CatManagementTests {
         when(service.deleteCat(41, 12)).thenReturn(true);
         assertEquals("success", controller.deleteCat(41).getPage());
         assertEquals("error", controller.deleteCat(42).getPage());
+    }
+
+    @Test
+    void recommendationCannotReadAnotherUsersCat() {
+        CatService service = mock(CatService.class);
+        CatalogRagService rag = mock(CatalogRagService.class);
+        HttpSession session = mock(HttpSession.class);
+        CatController controller = controller(service, session);
+        ReflectionTestUtils.setField(controller, "catalogRagService", rag);
+        Usr user = new Usr();
+        user.setUserid(12);
+        when(session.getAttribute("admin")).thenReturn(user);
+
+        assertEquals("error", controller.recommendForCat(41).getPage());
+        verify(service).getOwnedCat(41, 12);
+        verifyNoInteractions(rag);
     }
 
     private CatController controller(CatService service, HttpSession session) {

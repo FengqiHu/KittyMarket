@@ -9,7 +9,7 @@
   </div>
 </section>
 <div class="section-heading"><div><h1>全部商品</h1><p>猫咪主粮、零食与日常用品</p></div><el-button @click="$router.push('/buyer-show-recommend')">根据猫咪档案选粮<el-icon class="icon-after"><IconArrowRight /></el-icon></el-button></div>
-<form class="search-toolbar surface" @submit.prevent="handleSearch"><el-input v-model="searchQuery" placeholder="输入商品名称" size="large" clearable><template #prefix><el-icon><IconSearch /></el-icon></template></el-input><el-select v-model="selectedCategory" size="large" aria-label="商品分类"><el-option v-for="category in ['猫咪主粮','猫咪零食','猫咪日用']" :key="category" :label="category" :value="category" /></el-select><el-button type="primary" native-type="submit" size="large">搜索</el-button></form>
+<form class="search-toolbar surface" @submit.prevent="handleSearch"><el-input v-model="searchQuery" placeholder="描述想找的商品，例如适合幼猫的鸡肉主粮" size="large" clearable><template #prefix><el-icon><IconSearch /></el-icon></template></el-input><el-select v-model="selectedCategory" size="large" aria-label="商品分类"><el-option v-for="category in ['全部','猫咪主粮','猫咪零食','猫咪日用']" :key="category" :label="category" :value="category" /></el-select><el-button type="primary" native-type="submit" size="large">搜索</el-button></form>
 <div class="category-toolbar"><div class="category-tabs" aria-label="商品分类"><button v-for="category in ['全部','猫咪主粮','猫咪零食','猫咪日用']" :key="category" :class="{ 'is-active': categoryView === category }" :aria-pressed="categoryView === category" @click="filterCategory(category)">{{ category }}</button></div><span class="muted">共 {{ filteredItems.length }} 件商品</span></div>
 <el-alert v-if="loadError" :title="loadError" type="error" show-icon :closable="false" class="form-alert"><el-button text @click="fetchgoodListSession">重新加载</el-button></el-alert><el-skeleton v-if="loading" :rows="5" animated class="surface" />
 <div v-else class="product-grid"><article v-for="item in paginatedItems" :key="item.goodid" class="product-card"><button class="product-cover" @click="postToBuyerShop(item.goodid)"><ProductMedia :path="(item.mediaFiles.find(media => media.isActive) || {}).url" :alt="item.goodname" /><span class="product-category">{{ item.subkind || item.kind }}</span></button><div v-if="item.mediaFiles.length > 1" class="media-controls"><el-button circle size="small" aria-label="上一张" @click="showPrevMedia(item)"><el-icon><IconArrowLeft /></el-icon></el-button><el-button circle size="small" aria-label="下一张" @click="showNextMedia(item)"><el-icon><IconArrowRight /></el-icon></el-button></div><div class="product-card-body"><span class="product-kicker">{{ item.kind }}</span><h3>{{ item.goodname }}</h3><p>{{ item.description }}</p><div class="product-card-bottom"><span class="product-price"><small>¥</small>{{ Number(item.price).toFixed(2) }}</span><el-button size="small"  @click="postToBuyerShop(item.goodid)">查看详情</el-button></div><span class="stock-note">{{ item.number > 0 ? '库存 ' + item.number + ' 件' : '暂时售罄' }}</span></div></article></div>
@@ -28,7 +28,7 @@ export default {
       loading: true, loadError: '',
      searchQuery: '',
      categoryView: '全部',
-     selectedCategory: '猫咪主粮', // 设置初始值为“猫咪主粮”
+     selectedCategory: '全部',
      filteredItems: [], // 添加这个新数组
       currentPage: 1,
       itemsPerPage: 8,
@@ -201,36 +201,8 @@ export default {
         this.$router.push('/');
       }
     },
-    async handleSearch() {
-      if (!this.currentUser) { this.filteredItems = this.items.filter(item => item.kind === this.selectedCategory && item.goodname.includes(this.searchQuery.trim())); this.currentPage = 1; return; }
-      console.log('搜索已执行');
-      const credentials = {
-        keyword: this.searchQuery,
-        kind: this.selectedCategory,
-        ishistory: 0
-      };
-
-      const response = await fetch('/good/search-list-control', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const responseData = await response.json();
-
-      if (responseData.page === '/error') {
-        // 重定向到错误页面，并将错误消息和重定向目标作为参数传递
-        this.$router.push({ path: '/error', query: { err: responseData.msg, to: responseData.data }})
-      } else if (responseData.page === '/success') {
-        // 重定向到成功界面，并将成功消息和重定向目标作为参数传递
-        this.$router.push({ path: '/success', query: { message: responseData.msg, to: responseData.data }})
-      } else if (responseData.page === null) {
-        console.log("未知页面类型");
-      } else {
-        this.$router.push({ path: responseData.page });
-      }
+    handleSearch() {
+      this.$router.push({ path: '/buyer-search', query: { query: this.searchQuery.trim(), kind: this.selectedCategory } });
     },
     showPrevMedia(item) {
         const currentIndex = item.mediaFiles.findIndex(media => media.isActive);

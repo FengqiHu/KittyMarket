@@ -4,6 +4,7 @@ import com.example.maoliang.Controller.utils.Result;
 import com.example.maoliang.Entity.Cat;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Service.CatService;
+import com.example.maoliang.Service.CatalogRagService;
 import com.example.maoliang.dto.CatRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -27,6 +28,9 @@ public class CatController {
     private CatService catService;
 
     @Autowired
+    private CatalogRagService catalogRagService;
+
+    @Autowired
     private HttpSession session;
 
     private Usr currentUser() {
@@ -47,7 +51,30 @@ public class CatController {
 
     @GetMapping("/show-recommend/{id}")
     public Result showRecommend(@PathVariable int id) {
-        return new Result(null, null, catService.showRecommend(id));
+        Usr user = currentUser();
+        if (user == null) return new Result("error", "请先登录", null);
+        if (user.getUserid() != id) return new Result("error", "无权查看该推荐", null);
+        try {
+            Cat cat = catService.getCatsByOwnerId(id).stream().findFirst().orElse(null);
+            return new Result(null, null, cat == null ? java.util.List.of() : catalogRagService.recommend(cat).items());
+        } catch (Exception e) {
+            LOGGER.error("生成猫咪推荐失败", e);
+            return new Result("error", "推荐生成失败，请稍后重试", null);
+        }
+    }
+
+    @GetMapping("/recommend/{catId}")
+    public Result recommendForCat(@PathVariable int catId) {
+        Usr user = currentUser();
+        if (user == null) return new Result("error", "请先登录", null);
+        try {
+            Cat cat = catService.getOwnedCat(catId, user.getUserid());
+            if (cat == null) return new Result("error", "猫咪档案不存在或无权查看", null);
+            return new Result("success", "推荐已生成", catalogRagService.recommend(cat));
+        } catch (Exception e) {
+            LOGGER.error("生成猫咪推荐失败", e);
+            return new Result("error", "推荐生成失败，请稍后重试", null);
+        }
     }
 
     @PostMapping("/add-cat")

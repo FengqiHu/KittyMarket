@@ -183,4 +183,10 @@ public class CatRepository {
             return cat;
         });
     }
+
+    public Cat findByIdAndOwner(int catid, int owner) {
+        List<Cat> cats = jdbcTemplate.query("SELECT * FROM MLcat WHERE catid = ? AND owner = ?",
+                new BeanPropertyRowMapper<>(Cat.class), catid, owner);
+        return cats.isEmpty() ? null : cats.get(0);
+    }
 }

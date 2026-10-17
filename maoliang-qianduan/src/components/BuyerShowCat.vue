@@ -22,6 +22,7 @@
         <el-descriptions-item label="档案编号">#{{ cat.catid }}</el-descriptions-item>
       </el-descriptions>
       <div class="cat-profile-actions">
+        <el-button @click="$router.push({ path: '/buyer-show-recommend', query: { catid: cat.catid } })">为它推荐猫粮</el-button>
         <el-button plain type="primary" @click="edit(cat)"><el-icon><IconEdit /></el-icon>编辑档案</el-button>
         <el-button plain type="danger" @click="remove(cat)">删除</el-button>
       </div>

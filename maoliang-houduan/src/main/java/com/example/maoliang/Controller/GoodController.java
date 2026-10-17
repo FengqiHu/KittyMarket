@@ -4,6 +4,7 @@ import com.example.maoliang.Common.extraOperations;
 import com.example.maoliang.Controller.utils.Result;
 
 import com.example.maoliang.Service.GoodService;
+import com.example.maoliang.Service.CatalogRagService;
 import com.example.maoliang.Entity.Good;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Service.OrderService;
@@ -35,6 +36,8 @@ public class GoodController {
     @Autowired
     private GoodService goodService;
     @Autowired
+    private CatalogRagService catalogRagService;
+    @Autowired
     private OrderService orderService;
     @Autowired
     public HttpSession session;
@@ -42,6 +45,19 @@ public class GoodController {
 //    @Value("${upload.directory}")
 //    private String uploadDirectory;
 
+
+    @GetMapping("/rag-search")
+    public Result ragSearch(@RequestParam(defaultValue = "") String query,
+                            @RequestParam(defaultValue = "全部") String kind) {
+        try {
+            return new Result("success", "商品检索完成", catalogRagService.search(query, kind));
+        } catch (IllegalArgumentException e) {
+            return new Result("error", e.getMessage(), null);
+        } catch (Exception e) {
+            LOGGER.error("商品 RAG 检索失败", e);
+            return new Result("error", "商品检索失败，请稍后重试", null);
+        }
+    }
 
     @RequestMapping("/search-list-control")
     public Result searchList(@RequestBody Searchlistdata searchlistdata) {
@@ -246,6 +262,7 @@ public class GoodController {
 //            String kind = product.getKind();
 //            String subkind = product.getSubkind();
 //
+
 //            int owner = currentUsr.getUserid();
 //
 //                // 过滤当前索引的文件数组

@@ -1114,6 +1114,17 @@ h1, h2, h3 {
   flex: 1;
 }
 
+.rag-summary {
+  margin: 18px 0 24px;
+  padding: 20px 24px;
+}
+
+.rag-summary p {
+  margin: 8px 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .checkout-layout {
   display: grid;
   grid-template-columns: .8fr 1.2fr;

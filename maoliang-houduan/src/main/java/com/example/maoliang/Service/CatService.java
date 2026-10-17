@@ -73,6 +73,10 @@ public class CatService {
     public List<Cat> getCatsByOwnerId(int ownerId) {
         return catRepository.findByOwner(ownerId);
     }
+
+    public Cat getOwnedCat(int catId, int ownerId) {
+        return catRepository.findByIdAndOwner(catId, ownerId);
+    }
     public void addCat(Cat cat, int owner) {
         cat.setOwner(owner);
         catRepository.save(cat);

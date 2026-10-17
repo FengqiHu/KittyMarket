@@ -82,6 +82,23 @@ mvn test
 KITTY_REDIS_INTEGRATION=true mvn test
 ```
 
+### Qwen 与 RAG 检索
+
+后端使用 LangChain4j 将在售商品记录构造成检索片段，以 Qwen 向量模型进行语义检索，再把命中的商品事实交给 Qwen 生成简短说明。`GET /good/rag-search?query=...&kind=...` 用于买家商品检索；`GET /cat/recommend/{catId}` 根据当前登录用户指定的猫咪档案推荐主粮。推荐会先校验品种、年龄、体重、库存和热量，商品 ID 与建议喂食量始终由数据库及现有公式确定。
+
+启动后端前设置以下环境变量。密钥应只配置在后端环境，不能写入前端代码或提交到 Git：
+
+| 环境变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `DASHSCOPE_API_KEY` | 空 | 阿里云百炼 API Key；留空时使用本地检索与规则推荐 |
+| `DASHSCOPE_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 与 API Key 所在地域一致的 OpenAI 兼容接口地址；工作空间域名可在百炼控制台获取 |
+| `QWEN_CHAT_MODEL` | `qwen-plus` | 生成检索说明的模型 |
+| `QWEN_EMBEDDING_MODEL` | `text-embedding-v4` | 商品与查询的向量模型 |
+
+商品向量索引保存在后端内存中，首次检索时建立，商品内容变化时重建。Qwen 调用不可用时会退回本地关键词检索或规则推荐，仍不会返回下架、无库存或不适用的推荐商品。配置密钥后，商品文案以及所选猫咪的档案信息会发送至所配置的百炼接口。
+
+参考：[LangChain4j RAG](https://docs.langchain4j.dev/tutorials/rag/)、[阿里云百炼向量模型](https://help.aliyun.com/en/model-studio/embedding)。
+
 ### 启动
 
 在一个终端启动后端（从后端目录运行，以加载本地凭据）：
@@ -116,4 +133,4 @@ npm run build
 
 结算已接入 `/order/createorder-control`：校验登录和收货信息，在同一数据库事务中创建订单并扣减库存，成功后进入“我的订单”。从购物车结算会扣减购物车数量并保留收藏；发货前取消订单会恢复库存。后端启动时会自动为旧订单表补充收货人字段，保留原有数据。
 
-原项目尚未实现新增猫咪档案接口，对应页面已明确显示状态。
+猫咪档案支持新增、编辑和删除；商品检索与指定猫咪推荐支持 Qwen RAG，并可在未配置密钥时使用本地检索。
