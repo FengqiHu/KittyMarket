@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/** 定时将已提交的 outbox 记录发布到 RabbitMQ，发送失败时保留记录等待下轮重试。 */
 @Component
 @ConditionalOnProperty(name = "app.rag.mq.enabled", havingValue = "true")
 public class CatalogIndexPublisher {
@@ -32,6 +33,7 @@ public class CatalogIndexPublisher {
                 CorrelationData correlation = new CorrelationData(Long.toString(id));
                 rabbit.convertAndSend(CatalogIndexMessaging.EXCHANGE, CatalogIndexMessaging.ROUTING_KEY,
                         Long.toString(id), correlation);
+                // 收到 broker 确认且消息成功路由后才能删除；重复投递仍可能发生，消费者需可重复执行。
                 CorrelationData.Confirm confirm = correlation.getFuture().get(5, TimeUnit.SECONDS);
                 if (!confirm.isAck() || correlation.getReturned() != null) {
                     throw new IllegalStateException("RabbitMQ did not route catalog event " + id);

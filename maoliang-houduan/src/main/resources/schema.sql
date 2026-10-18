@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS MLuser  (
 
 CREATE TABLE IF NOT EXISTS MLgood  (
     goodid INTEGER PRIMARY KEY AUTO_INCREMENT,
-    goodname char(20) NOT NULL,
+    goodname varchar(255) NOT NULL,
     description varchar(100) NOT NULL,
     price double NOT NULL,
     picture char(100) NOT NULL,
@@ -54,7 +54,7 @@ DEALLOCATE PREPARE buyer_category_index_stmt;
 
 CREATE TABLE IF NOT EXISTS MLhistorygood  (
     goodid INTEGER NOT NULL,
-    goodname char(20) NOT NULL,
+    goodname varchar(255) NOT NULL,
     description varchar(100) NOT NULL,
     price double NOT NULL,
     picture char(100) NOT NULL,

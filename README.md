@@ -112,7 +112,7 @@ docker compose exec redis redis-cli DEL 'kittymarket:{hot-goods}:v1' 'kittymarke
 
 ### Qwen 与 RAG 检索
 
-后端使用 LangChain4j 将在售商品记录构造成检索片段，以 Qwen 向量模型进行语义检索。商品搜索只返回商品结果，不再调用对话模型生成已从页面移除的检索说明；猫咪选粮仍可生成有商品依据的推荐说明。`GET /good/rag-search?query=...&kind=...&page=1&size=8` 用于买家商品检索，响应包含当前页的 `items` 和全部匹配数 `total`；`GET /cat/recommend/{catId}` 根据当前登录用户指定的猫咪档案推荐主粮。推荐会先校验品种、年龄、体重、库存和热量，商品 ID 与建议喂食量始终由数据库及现有公式确定。
+后端使用 LangChain4j 将在售商品记录构造成检索片段，以 Qwen 向量模型进行语义检索。商品搜索只返回商品结果，不再调用对话模型生成已从页面移除的检索说明；猫咪选粮仍可生成有商品依据的推荐说明。`GET /good/rag-search?query=...&kind=...&page=1&size=8` 用于买家商品检索，响应包含当前页的 `items` 和全部匹配数 `total`；`GET /cat/recommend/{catId}?batch=0` 根据当前登录用户指定的猫咪档案推荐在售主粮，每批最多 12 款，增加 `batch` 可依次查看下一批。推荐不计算喂食量；已标注的年龄、体重范围用于排除不匹配商品，未标注范围的商品仍可参与排序，品种只作为排序参考。未标注不表示已确认适用。
 
 启动后端前设置以下环境变量。密钥应只配置在后端环境，不能写入前端代码或提交到 Git：
 
@@ -128,7 +128,7 @@ docker compose exec redis redis-cli DEL 'kittymarket:{hot-goods}:v1' 'kittymarke
 
 `QWEN_EMBEDDING_MODEL` 也支持 `tongyi-embedding-vision-plus-2026-03-06`。该模型自动使用百炼原生多模态向量接口，以文本独立向量方式处理商品文案与查询，默认 1152 维；`DASHSCOPE_BASE_URL` 仍填写原有兼容接口地址，后端自动转换向量接口路径。切换模型会建立独立的商品索引，首次需要重新计算向量，之后持久化复用。[百炼原生接口文档](https://help.aliyun.com/zh/model-studio/multimodal-embedding-api-reference)
 
-有搜索词时，仅保留分数不低于 `max(RAG_SEARCH_MIN_SCORE, 最高分 - RAG_SEARCH_SCORE_WINDOW)` 的商品，按相关度排序后分页；`total` 为筛选后的命中数。没有命中时返回空列表，空搜索词仍可浏览全部商品。门槛基于当前 `tongyi-embedding-vision-plus-2026-03-06` 的真实目录样本校准，切换其他模型后可调整。猫咪档案推荐沿用品种、年龄、体重等条件筛选后的排序，不使用搜索门槛。
+有搜索词时，仅保留分数不低于 `max(RAG_SEARCH_MIN_SCORE, 最高分 - RAG_SEARCH_SCORE_WINDOW)` 的商品，按相关度排序后分页；`total` 为筛选后的命中数。没有命中时返回空列表，空搜索词仍可浏览全部商品。门槛基于当前 `tongyi-embedding-vision-plus-2026-03-06` 的真实目录样本校准，切换其他模型后可调整。猫咪档案推荐在已标注适用范围的商品上校验年龄、体重后排序，不使用搜索门槛，也不要求商品提供热量数据。
 
 商品向量持久化到 MySQL 的 `rag_product_embedding` 表，并按接口地址、向量模型与商品文档哈希校验复用。重启后从数据库装载已有向量；仅新增或文案、分类、适用范围变化的商品需要重新调用向量模型，价格和正库存数量变化不触发向量化。首次全量初始化采用有限并发，每批完成即保存，失败后可接着处理缺失部分。同一查询的向量缓存最多 256 条，排序缓存最多 128 条，均保留 10 分钟，并合并相同查询的并发请求；翻页直接复用完整排序，商品展示数据和上架、库存状态仍实时读取。新的查询仍需可用的向量模型额度；查询缓存重启后清空。Qwen 调用不可用（包括额度耗尽）时会退回本地关键词检索或规则推荐，仍不会返回下架、无库存或不适用的推荐商品。配置密钥后，商品文案以及所选猫咪的档案信息会发送至所配置的百炼接口。
 

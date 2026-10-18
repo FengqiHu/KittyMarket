@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Map;
 
+/** 声明商品索引更新使用的交换机、工作队列和失败后的死信队列；仅在启用 MQ 时生效。 */
 @Configuration
 @EnableScheduling
 @ConditionalOnProperty(name = "app.rag.mq.enabled", havingValue = "true")
@@ -23,6 +24,7 @@ public class CatalogIndexMessaging {
 
     @Bean
     public Declarables catalogIndexQueues() {
+        // 消费失败且重试耗尽的消息由工作队列转发到死信队列，供排查或重新投递。
         DirectExchange exchange = new DirectExchange(EXCHANGE, true, false);
         DirectExchange deadLetterExchange = new DirectExchange(DEAD_LETTER_EXCHANGE, true, false);
         Queue queue = new Queue(QUEUE, true, false, false,

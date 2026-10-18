@@ -55,7 +55,7 @@ class CatalogRagServiceTests {
     }
 
     @Test
-    void recommendationFiltersBySelectedCatsProfileBeforeRanking() {
+    void recommendationFiltersAgeAndWeightButNotBreedBeforeRanking() {
         GoodListRepository repository = mock(GoodListRepository.class);
         when(repository.shownow()).thenReturn(List.of(
                 product(1, "适用主粮", "鸡肉", "猫咪主粮", 10, "布偶猫", "1-10", "1-8", 4.0),
@@ -69,9 +69,66 @@ class CatalogRagServiceTests {
 
         var result = service.recommend(cat);
         assertEquals(7, result.catid());
-        assertEquals(List.of(1), result.sourceIds());
-        assertTrue(result.items().get(0).getWeight() > 0);
+        assertEquals(2, result.sourceIds().size());
+        assertTrue(result.sourceIds().containsAll(List.of(1, 2)));
+        assertNull(result.items().get(0).getWeight());
         assertEquals("rules", result.mode());
+    }
+
+    @Test
+    void recommendationAcceptsFreeFormBreedWithoutExcludingAdultFood() {
+        GoodListRepository repository = mock(GoodListRepository.class);
+        when(repository.shownow()).thenReturn(List.of(
+                product(1, "英短成猫粮", "鸡肉", "猫咪主粮", 10, "英国短毛猫", "1-10", "1-12", 3.8),
+                product(2, "美短成猫粮", "鸡肉", "猫咪主粮", 10, "美国短毛猫", "1-10", "1-12", 3.8),
+                product(3, "英短幼猫粮", "鸡肉", "猫咪主粮", 10, "英国短毛猫", "0-1", "1-12", 4.0)));
+        CatalogRagService service = new CatalogRagService(repository, "", "unused", "unused", "unused");
+        Cat cat = new Cat();
+        cat.setCatid(8); cat.setCatname("小灰"); cat.setCatkind("英短");
+        cat.setCatage(3); cat.setCatweight(2); cat.setCatstate(3);
+
+        var result = service.recommend(cat);
+
+        assertEquals(2, result.sourceIds().size());
+        assertTrue(result.sourceIds().containsAll(List.of(1, 2)));
+        assertNull(result.items().get(0).getWeight());
+    }
+
+    @Test
+    void recommendationIncludesUnlabeledStapleFoodWithoutFeedAmount() {
+        GoodListRepository repository = mock(GoodListRepository.class);
+        when(repository.shownow()).thenReturn(List.of(
+                product(1, "导入主粮", "鸡肉配方", "猫咪主粮", 10, "未标注", "未标注", "未标注", 0),
+                product(2, "幼猫主粮", "鸡肉配方", "猫咪主粮", 10, "未标注", "0-1", "1-12", 4),
+                product(3, "猫咪零食", "鸡肉", "猫咪零食", 10, "未标注", "未标注", "未标注", 0)));
+        CatalogRagService service = new CatalogRagService(repository, "", "unused", "unused", "unused");
+        Cat cat = new Cat();
+        cat.setCatid(9); cat.setCatname("小灰"); cat.setCatkind("英短");
+        cat.setCatage(3); cat.setCatweight(2); cat.setCatstate(3);
+
+        var result = service.recommend(cat);
+
+        assertEquals(List.of(1), result.sourceIds());
+        assertNull(result.items().get(0).getWeight());
+        assertFalse(result.summary().contains("喂食量"));
+    }
+
+    @Test
+    void recommendationCanShowNextGroupOfEligibleFood() {
+        GoodListRepository repository = mock(GoodListRepository.class);
+        when(repository.shownow()).thenReturn(IntStream.rangeClosed(1, 25)
+                .mapToObj(id -> product(id, "主粮" + id, "鸡肉配方", "猫咪主粮", 10,
+                        "未标注", "未标注", "未标注", 0))
+                .toList());
+        CatalogRagService service = new CatalogRagService(repository, "", "unused", "unused", "unused");
+        Cat cat = new Cat();
+        cat.setCatid(10); cat.setCatname("小灰"); cat.setCatkind("英短");
+        cat.setCatage(3); cat.setCatweight(2); cat.setCatstate(3);
+
+        assertEquals(IntStream.rangeClosed(1, 12).boxed().toList(), service.recommend(cat, 0).sourceIds());
+        assertEquals(IntStream.rangeClosed(13, 24).boxed().toList(), service.recommend(cat, 1).sourceIds());
+        assertEquals(List.of(25), service.recommend(cat, 2).sourceIds());
+        assertEquals(IntStream.rangeClosed(1, 12).boxed().toList(), service.recommend(cat, 3).sourceIds());
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -64,13 +65,13 @@ public class CatController {
     }
 
     @GetMapping("/recommend/{catId}")
-    public Result recommendForCat(@PathVariable int catId) {
+    public Result recommendForCat(@PathVariable int catId, @RequestParam(defaultValue = "0") int batch) {
         Usr user = currentUser();
         if (user == null) return new Result("error", "请先登录", null);
         try {
             Cat cat = catService.getOwnedCat(catId, user.getUserid());
             if (cat == null) return new Result("error", "猫咪档案不存在或无权查看", null);
-            return new Result("success", "推荐已生成", catalogRagService.recommend(cat));
+            return new Result("success", "推荐已生成", catalogRagService.recommend(cat, batch));
         } catch (Exception e) {
             LOGGER.error("生成猫咪推荐失败", e);
             return new Result("error", "推荐生成失败，请稍后重试", null);

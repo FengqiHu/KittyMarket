@@ -62,7 +62,7 @@ class CatManagementTests {
         user.setUserid(12);
         when(session.getAttribute("admin")).thenReturn(user);
 
-        assertEquals("error", controller.recommendForCat(41).getPage());
+        assertEquals("error", controller.recommendForCat(41, 0).getPage());
         verify(service).getOwnedCat(41, 12);
         verifyNoInteractions(rag);
     }
