@@ -24,8 +24,33 @@ CREATE TABLE IF NOT EXISTS MLgood  (
     catkind varchar(100) NOT NULL,
     catage varchar(20)  NOT NULL,
     catweight varchar(20)  NOT NULL,
+    KEY idx_mlgood_state_goodid (state, goodid),
+    KEY idx_mlgood_state_kind_goodid (state, kind, goodid),
     FOREIGN KEY (owner) REFERENCES MLuser (userid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Existing databases also need the browsing indexes. These checks keep startup idempotent.
+SET @buyer_all_index_migration = IF(
+    EXISTS(SELECT 1 FROM information_schema.statistics
+           WHERE table_schema = DATABASE() AND table_name = 'MLgood'
+             AND index_name = 'idx_mlgood_state_goodid'),
+    'SELECT 1',
+    'ALTER TABLE MLgood ADD INDEX idx_mlgood_state_goodid (state, goodid)'
+);
+PREPARE buyer_all_index_stmt FROM @buyer_all_index_migration;
+EXECUTE buyer_all_index_stmt;
+DEALLOCATE PREPARE buyer_all_index_stmt;
+
+SET @buyer_category_index_migration = IF(
+    EXISTS(SELECT 1 FROM information_schema.statistics
+           WHERE table_schema = DATABASE() AND table_name = 'MLgood'
+             AND index_name = 'idx_mlgood_state_kind_goodid'),
+    'SELECT 1',
+    'ALTER TABLE MLgood ADD INDEX idx_mlgood_state_kind_goodid (state, kind, goodid)'
+);
+PREPARE buyer_category_index_stmt FROM @buyer_category_index_migration;
+EXECUTE buyer_category_index_stmt;
+DEALLOCATE PREPARE buyer_category_index_stmt;
 
 CREATE TABLE IF NOT EXISTS MLhistorygood  (
     goodid INTEGER NOT NULL,
@@ -105,4 +130,34 @@ CREATE TABLE IF NOT EXISTS MLcat  (
     catkind varchar(20) NOT NULL,
     owner INTEGER NOT NULL,
     FOREIGN KEY (owner) REFERENCES MLuser (userid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A single row per account/product keeps browsing history compact across sessions.
+-- No product FK: removing a product must not be blocked by browsing history.
+CREATE TABLE IF NOT EXISTS MLproduct_view (
+    userid INTEGER NOT NULL,
+    goodid INTEGER NOT NULL,
+    visits INTEGER NOT NULL DEFAULT 1,
+    last_viewed DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (userid, goodid),
+    KEY idx_product_view_recent (userid, last_viewed),
+    FOREIGN KEY (userid) REFERENCES MLuser (userid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Reusable product vectors survive application/container restarts. No credentials are stored.
+CREATE TABLE IF NOT EXISTS rag_product_embedding (
+    namespace CHAR(64) NOT NULL,
+    good_id INTEGER NOT NULL,
+    document_hash CHAR(64) NOT NULL,
+    vector_data MEDIUMBLOB NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (namespace, good_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product changes are committed with their outbox events before RabbitMQ publishing.
+CREATE TABLE IF NOT EXISTS rag_catalog_outbox (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    good_id INTEGER NOT NULL,
+    operation VARCHAR(20) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

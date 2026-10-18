@@ -28,7 +28,7 @@ import axios from 'axios';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import { ElMessage } from 'element-plus';
 const buyerNav = [
-  { path: '/buyer', label: '全部商品', icon: 'House' }, { path: '/cart', label: '购物车', icon: 'ShoppingCart' }, { path: '/likes', label: '我的收藏', icon: 'Star' }, { path: '/buyer-history', label: '我的订单', icon: 'Tickets' }, { path: '/buyer-show-recommend', label: '猫粮推荐', icon: 'Collection' }, { path: '/buyer-show-cat', label: '猫咪档案', icon: 'User' },
+  { path: '/buyer', label: '热门商品', icon: 'House' }, { path: '/cart', label: '购物车', icon: 'ShoppingCart' }, { path: '/likes', label: '我的收藏', icon: 'Star' }, { path: '/buyer-history', label: '我的订单', icon: 'Tickets' }, { path: '/buyer-show-recommend', label: '猫粮推荐', icon: 'Collection' }, { path: '/buyer-show-cat', label: '猫咪档案', icon: 'User' },
 ];
 const sellerNav = [
   { path: '/seller/ShowGoods', label: '商品管理', icon: 'Grid' }, { path: '/seller/upload-onegood', label: '发布商品', icon: 'Plus' }, { path: '/seller/upload-multiplegoods', label: '批量发布', icon: 'Upload' }, { path: '/seller/show-userinfo', label: '订单管理', icon: 'Tickets' }, { path: '/seller/show-historygoods', label: '商品历史', icon: 'Box' }, { path: '/seller/show-allusers', label: '客户管理', icon: 'User' }, { path: '/seller/update-password', label: '账户设置', icon: 'Lock' },

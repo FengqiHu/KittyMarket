@@ -32,6 +32,9 @@ public class OrderService {
     @Autowired
     private HotGoodsCache hotGoodsCache;
 
+    @Autowired
+    private CatalogIndexOutbox catalogIndexOutbox;
+
     @Transactional
     public Order createOrder(CreateOrderData request, Usr buyer) {
         if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
@@ -61,6 +64,7 @@ public class OrderService {
         if (Boolean.TRUE.equals(request.fromCart())) {
             goodRepository.consumeCart(good.getGoodid(), buyer.getUserid(), request.number());
         }
+        catalogIndexOutbox.enqueue(good.getGoodid(), "STOCK_CHANGED");
         hotGoodsCache.invalidateAfterCommit();
         return order;
     }
@@ -96,6 +100,7 @@ public class OrderService {
         if (!goodRepository.updateGoodNumber(order.getNumber(), order.getGoodid())) {
             throw new IllegalStateException("取消订单时恢复库存失败");
         }
+        catalogIndexOutbox.enqueue(order.getGoodid(), "STOCK_CHANGED");
         hotGoodsCache.invalidateAfterCommit();
         return true;
     }

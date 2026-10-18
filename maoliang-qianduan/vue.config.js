@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
   transpileDependencies: true,
-  filenameHashing: false,//前后端图片文件名保持一致
+  filenameHashing: true, // 更新后加载新的脚本，避免浏览器沿用旧版首页。
 
   // devServer: {
   //   port: 3000,

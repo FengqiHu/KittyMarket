@@ -8,6 +8,7 @@ import com.example.maoliang.Service.CatalogRagService;
 import com.example.maoliang.Entity.Good;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Service.OrderService;
+import com.example.maoliang.Repository.RecommendationRepository;
 import com.example.maoliang.dto.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -20,6 +21,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +43,8 @@ public class GoodController {
     @Autowired
     private OrderService orderService;
     @Autowired
+    private RecommendationRepository recommendationRepository;
+    @Autowired
     public HttpSession session;
 
 //    @Value("${upload.directory}")
@@ -48,9 +53,11 @@ public class GoodController {
 
     @GetMapping("/rag-search")
     public Result ragSearch(@RequestParam(defaultValue = "") String query,
-                            @RequestParam(defaultValue = "全部") String kind) {
+                            @RequestParam(defaultValue = "全部") String kind,
+                            @RequestParam(defaultValue = "1") int page,
+                            @RequestParam(defaultValue = "8") int size) {
         try {
-            return new Result("success", "商品检索完成", catalogRagService.search(query, kind));
+            return new Result("success", "商品检索完成", catalogRagService.search(query, kind, page, size));
         } catch (IllegalArgumentException e) {
             return new Result("error", e.getMessage(), null);
         } catch (Exception e) {
@@ -133,6 +140,17 @@ public class GoodController {
     public Result buyerAllGoodList() {
         List<Good> goodList = goodService.showNowGoods();
         return new Result(BUYER_ALL_GOODS_PAGE, null, goodList);
+    }
+
+    @GetMapping("/buyer-goods-page")
+    public Result buyerGoodsPage(@RequestParam(defaultValue = "全部") String category,
+                                 @RequestParam(defaultValue = "1") int page,
+                                 @RequestParam(defaultValue = "8") int size) {
+        if (page < 1 || size < 1 || size > 48) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid page or size");
+        }
+        Usr user = (Usr) session.getAttribute("admin");
+        return new Result(BUYER_ALL_GOODS_PAGE, null, recommendationRepository.page(category, page, size, user));
     }
 
     @GetMapping("/hot-goods")
@@ -336,6 +354,10 @@ public class GoodController {
     public Result buyerShowGood(@PathVariable int goodid) {
         Good g = goodService.showGood(goodid);
         session.setAttribute("now-good", g);
+        Usr user = (Usr) session.getAttribute("admin");
+        if (g != null && user != null && user.getPower() == 0) {
+            recommendationRepository.recordView(user.getUserid(), goodid);
+        }
         return new Result(BUYER_SHOP_PAGE, null, null);
     }
 

@@ -1,8 +1,24 @@
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: maoliang
+      MYSQL_USER: ${DB_USERNAME:-kittymarket}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-kittymarket-local}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-kittymarket-root-local}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./maoliang-houduan/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/demo-data.sql:/docker-entrypoint-initdb.d/02-demo.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
   redis:
     image: redis:7.4-alpine
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -10,3 +26,81 @@ services:
       timeout: 3s
       retries: 3
     restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-kittymarket}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-kittymarket-local}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  backend:
+    build: ./maoliang-houduan
+    environment:
+      DB_HOST: mysql
+      DB_NAME: maoliang
+      DB_USERNAME: ${DB_USERNAME:-kittymarket}
+      DB_PASSWORD: ${DB_PASSWORD:-kittymarket-local}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-kittymarket}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-kittymarket-local}
+      RAG_MQ_ENABLED: "true"
+      RAG_INDEX_CONCURRENCY: ${RAG_INDEX_CONCURRENCY:-4}
+      RAG_SEARCH_MIN_SCORE: ${RAG_SEARCH_MIN_SCORE:-0.85}
+      RAG_SEARCH_SCORE_WINDOW: ${RAG_SEARCH_SCORE_WINDOW:-0.03}
+      CATALOG_IMAGES_DIR: /app/catalog-images
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      QWEN_CHAT_MODEL: ${QWEN_CHAT_MODEL:-qwen-plus}
+      QWEN_EMBEDDING_MODEL: ${QWEN_EMBEDDING_MODEL:-text-embedding-v4}
+    volumes:
+      - ./data/images:/app/catalog-images:ro
+      - uploaded_images:/app/img
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    build: ./maoliang-qianduan
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+  benchmark:
+    image: node:22-alpine
+    profiles: ["benchmark"]
+    working_dir: /bench
+    volumes:
+      - ./scripts:/bench:ro
+    entrypoint: ["node", "/bench/benchmark_browsing_keepalive.cjs"]
+    depends_on:
+      - backend
+  search-benchmark:
+    image: python:3.12-alpine
+    profiles: ["benchmark"]
+    working_dir: /bench
+    volumes:
+      - ./scripts:/bench:ro
+    entrypoint: ["python", "/bench/benchmark_concurrency.py"]
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  rabbitmq_data:
+  uploaded_images:

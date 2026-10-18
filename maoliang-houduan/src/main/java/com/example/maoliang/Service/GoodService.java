@@ -3,10 +3,12 @@ package com.example.maoliang.Service;
 import com.example.maoliang.Repository.GoodListRepository;
 import com.example.maoliang.Repository.GoodRepository;
 import com.example.maoliang.Entity.Good;
+import com.example.maoliang.dto.GoodPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,9 @@ public class GoodService {
     @Autowired
     private HotGoodsCache hotGoodsCache;
 
+    @Autowired
+    private CatalogIndexOutbox catalogIndexOutbox;
+
     public List<Good> showHotGoods() {
         return hotGoodsCache.getOrLoad(goodListRepository::showHotGoods);
     }
@@ -40,6 +45,10 @@ public class GoodService {
 
     public List<Good> showNowGoods(){
         return goodListRepository.shownow();
+    }
+
+    public GoodPage showBuyerPage(String category, int page, int size) {
+        return goodListRepository.showBuyerPage(category, page, size);
     }
 
     public List<Good> showAllGoods(int userId) {
@@ -62,20 +71,30 @@ public class GoodService {
         return goodRepository.unique(name);
     }
 
+    @Transactional
     public void add(Good g) {
-        goodRepository.add(g);
+        int goodId = goodRepository.add(g);
+        catalogIndexOutbox.enqueue(goodId, "CREATED");
         hotGoodsCache.invalidateAfterCommit();
     }
 
+    @Transactional
     public int remove(int goodid) {
         int removed = goodRepository.remove(goodid);
-        if (removed > 0) hotGoodsCache.invalidateAfterCommit();
+        if (removed > 0) {
+            catalogIndexOutbox.enqueue(goodid, "DELETED");
+            hotGoodsCache.invalidateAfterCommit();
+        }
         return removed;
     }
 
+    @Transactional
     public boolean updateGood(Good g) {
         boolean updated = goodRepository.updateGood(g);
-        if (updated) hotGoodsCache.invalidateAfterCommit();
+        if (updated) {
+            catalogIndexOutbox.enqueue(g.getGoodid(), "UPDATED");
+            hotGoodsCache.invalidateAfterCommit();
+        }
         return updated;
     }
 

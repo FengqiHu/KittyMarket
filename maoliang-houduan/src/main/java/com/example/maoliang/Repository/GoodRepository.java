@@ -5,9 +5,10 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 
+import java.sql.Statement;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -21,35 +22,30 @@ public class GoodRepository{
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void add(Good good) {
+    public int add(Good good) {
         String insertGoodSql = "INSERT INTO MLgood (goodname, description, price, picture, state, number, kind, subkind, owner,calorie,catkind,catweight,catage) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String insertHistorySql = "INSERT INTO MLhistorygood (goodid, goodname, description, price, picture, number, kind, subkind, createdate, owner,calorie,catkind,catweight,catage) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-      //  System.out.println(good);
-        try {
-            jdbcTemplate.update(insertGoodSql, good.getGoodname(), good.getDescription(), good.getPrice(),
-                    good.getPicture(), good.getState(), good.getNumber(), good.getKind(), good.getSubkind(),
-                    good.getOwner(),good.getCalorie(),good.getCatkind(),good.getCatweight(),good.getCatage());
+        GeneratedKeyHolder key = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var statement = connection.prepareStatement(insertGoodSql, Statement.RETURN_GENERATED_KEYS);
+            Object[] values = {good.getGoodname(), good.getDescription(), good.getPrice(), good.getPicture(),
+                    good.getState(), good.getNumber(), good.getKind(), good.getSubkind(), good.getOwner(),
+                    good.getCalorie(), good.getCatkind(), good.getCatweight(), good.getCatage()};
+            for (int i = 0; i < values.length; i++) statement.setObject(i + 1, values[i]);
+            return statement;
+        }, key);
+        if (key.getKey() == null) throw new IllegalStateException("商品创建后未返回 ID");
+        int goodId = key.getKey().intValue();
+        good.setGoodid(goodId);
 
-            // 查询刚插入的商品的id 因为是自增，所以是最大
-            Integer goodId = jdbcTemplate.queryForObject("SELECT MAX(goodid) FROM MLgood", Integer.class);
-         //   System.out.println(goodId+"aa");
+        jdbcTemplate.update(insertHistorySql, goodId, good.getGoodname(), good.getDescription(),
+                good.getPrice(), good.getPicture(), good.getNumber(), good.getKind(), good.getSubkind(),
+                LocalDateTime.now(), good.getOwner(), good.getCalorie(), good.getCatkind(),
+                good.getCatweight(), good.getCatage());
 
-            // 获取当前时间
-            LocalDateTime currentTime = LocalDateTime.now();
-            // 定义日期时间格式
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            // 格式化当前时间
-            String formattedDateTime = currentTime.format(formatter);
-
-            jdbcTemplate.update(insertHistorySql, goodId, good.getGoodname(), good.getDescription(),
-                    good.getPrice(), good.getPicture(), good.getNumber(), good.getKind(), good.getSubkind(),
-                    formattedDateTime, good.getOwner(),good.getCalorie(),good.getCatkind(),good.getCatweight(),good.getCatage());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return goodId;
     }
 
 

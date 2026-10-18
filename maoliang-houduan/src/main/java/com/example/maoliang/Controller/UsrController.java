@@ -47,9 +47,7 @@ public class UsrController {
                 //System.out.println(session.getAttribute("admin"));
                 if (usr.getPower() == 0) {
                     // 买家权限，进入商品首页
-                    List<Good> gList = goodService.showNowGoods();
-
-                    return new Result(BUYER_PAGE, "success", gList);
+                    return new Result(BUYER_PAGE, "success", null);
                 } else if (usr.getPower() == 1) {
                     // 卖家权限，进入后台管理all商品页面
                     List<Good> gList = goodService.showAllGoods(usr.getUserid());

@@ -48,7 +48,7 @@ if (adminData) {
 }
 
 // 设置基本的 URL
-axios.defaults.baseURL = process.env.NODE_ENV === 'development' ? '/' : 'http://localhost:8080/';
+axios.defaults.baseURL = '/';
 
 // 添加 Axios 请求拦截器
 axios.interceptors.request.use(function (config) {

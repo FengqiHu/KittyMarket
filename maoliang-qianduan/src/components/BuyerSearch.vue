@@ -1,7 +1,8 @@
 <template>
+<section class="catalog-list" aria-labelledby="search-title">
   <div class="section-heading">
-    <div><h1>商品搜索</h1><p>按需求查找在售商品，结果来自当前商品目录。</p></div>
-    <el-tag round effect="plain">{{ mode === 'rag' ? 'Qwen RAG 检索' : '商品检索' }}</el-tag>
+    <div><h1 id="search-title">商品搜索</h1><p>按需求查找在售商品，结果来自当前商品目录。</p></div>
+    <span class="muted">共 {{ total }} 件商品</span>
   </div>
   <form class="search-toolbar surface" @submit.prevent="submit">
     <el-input v-model="searchQuery" placeholder="例如：适合幼猫的鸡肉主粮" size="large" clearable>
@@ -13,42 +14,43 @@
     <el-button type="primary" native-type="submit" size="large">搜索</el-button>
   </form>
   <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon class="form-alert" />
-  <section v-if="summary && !error" class="surface rag-summary">
-    <strong>检索说明</strong><p>{{ summary }}</p>
-    <small v-if="mode === 'rag'" class="muted">依据商品 #{{ sourceIds.join('、#') }} 的当前档案</small>
-  </section>
-  <el-skeleton v-if="loading" :rows="5" animated class="surface" />
-  <div v-else class="product-grid">
-    <article v-for="item in paginatedItems" :key="item.goodid" class="product-card">
-      <button class="product-cover" @click="showGood(item.goodid)">
-        <ProductMedia :path="firstPicture(item.picture)" :alt="item.goodname" />
-        <span class="product-category">{{ item.subkind || item.kind }}</span>
-      </button>
-      <div class="product-card-body">
-        <span class="product-kicker">{{ item.kind }} · #{{ item.goodid }}</span>
-        <h3>{{ item.goodname }}</h3><p>{{ item.description }}</p>
-        <div class="product-card-bottom"><span class="product-price"><small>¥</small>{{ Number(item.price).toFixed(2) }}</span><el-button size="small" @click="showGood(item.goodid)">查看详情</el-button></div>
-        <span class="stock-note">库存 {{ item.number }} 件</span>
-      </div>
-    </article>
+  <div class="catalog-products-region">
+    <el-skeleton v-if="loading && !items.length" :rows="5" animated class="surface" />
+    <el-empty v-else-if="!error && !items.length" description="没有匹配的在售商品，请尝试其他描述。" />
+    <div v-else class="product-grid catalog-product-grid" :aria-busy="loading">
+      <article v-for="item in items" :key="item.goodid" class="product-card">
+        <button class="product-cover" @click="showGood(item.goodid)">
+          <ProductMedia :path="firstPicture(item.picture)" :alt="item.goodname" />
+          <span class="product-category">{{ item.subkind || item.kind }}</span>
+        </button>
+        <div class="product-card-body">
+          <span class="product-kicker">{{ item.kind }} · #{{ item.goodid }}</span>
+          <h3>{{ item.goodname }}</h3><p>{{ item.description }}</p>
+          <div class="product-card-bottom"><span class="product-price"><small>¥</small>{{ Number(item.price).toFixed(2) }}</span><el-button size="small" @click="showGood(item.goodid)">查看详情</el-button></div>
+          <span class="stock-note">库存 {{ item.number }} 件</span>
+        </div>
+      </article>
+    </div>
   </div>
-  <el-empty v-if="!loading && !error && !items.length" description="没有匹配的在售商品，请尝试其他描述。" />
-  <div v-if="items.length > pageSize" class="pagination"><el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="items.length" layout="prev, pager, next" background /></div>
+  <div class="pagination catalog-pagination">
+    <el-pagination :current-page="currentPage" :page-size="pageSize" :pager-count="5" :total="total" :disabled="loading" layout="total, prev, pager, next, jumper" background hide-on-single-page @current-change="changePage" />
+  </div>
+</section>
 </template>
 
 <script>
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { preloadProductCovers } from '../utils/productList';
+import '../styles/catalog-list.css';
 
 export default {
   data: () => ({
-    searchQuery: '', selectedCategory: '全部', items: [], summary: '', sourceIds: [], mode: 'keyword',
-    loading: false, error: '', currentPage: 1, pageSize: 8
+    searchQuery: '', selectedCategory: '全部', items: [],
+    loading: false, error: '', currentPage: 1, pageSize: 8, total: 0, requestId: 0
   }),
-  computed: {
-    paginatedItems() { return this.items.slice((this.currentPage - 1) * this.pageSize, this.currentPage * this.pageSize); }
-  },
   created() { this.syncQuery(); this.load(); },
+  beforeUnmount() { this.requestId++; },
   watch: { '$route.query': { handler() { this.syncQuery(); this.load(); } } },
   methods: {
     syncQuery() {
@@ -64,20 +66,29 @@ export default {
         await this.$router.push({ path: '/buyer-search', query: { query, kind: this.selectedCategory } });
       }
     },
-    async load() {
+    changePage(page) {
+      if (page !== this.currentPage) this.load(page);
+    },
+    async load(page = 1) {
+      const requestId = ++this.requestId;
       this.loading = true; this.error = '';
       try {
-        const { data } = await axios.get('/good/rag-search', { params: { query: this.searchQuery.trim(), kind: this.selectedCategory } });
+        const { data } = await axios.get('/good/rag-search', { params: { query: this.searchQuery.trim(), kind: this.selectedCategory, page, size: this.pageSize } });
+        if (requestId !== this.requestId) return;
         if (data.page !== 'success') throw new Error(data.msg || '商品检索失败');
-        this.items = data.data.items || [];
-        this.summary = data.data.summary || '';
-        this.sourceIds = data.data.sourceIds || [];
-        this.mode = data.data.mode;
-        this.currentPage = 1;
+        if (!data.data || !Array.isArray(data.data.items)) throw new Error('商品数据格式错误');
+        const items = data.data.items;
+        if (this.items.length) await preloadProductCovers(items.map(item => this.firstPicture(item.picture)));
+        if (requestId !== this.requestId) return;
+        this.items = items;
+        this.total = Number(data.data.total) || 0;
+        this.currentPage = page;
       } catch (error) {
-        this.items = []; this.summary = '';
+        if (requestId !== this.requestId) return;
         this.error = error.message || '商品检索失败，请稍后重试';
-      } finally { this.loading = false; }
+      } finally {
+        if (requestId === this.requestId) this.loading = false;
+      }
     },
     firstPicture(path) { return (path || '').split(',')[0].trim(); },
     async showGood(id) {

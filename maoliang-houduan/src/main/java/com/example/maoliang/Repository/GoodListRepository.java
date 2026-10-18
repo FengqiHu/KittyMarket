@@ -1,6 +1,7 @@
 package com.example.maoliang.Repository;
 
 import com.example.maoliang.Entity.Good;
+import com.example.maoliang.dto.GoodPage;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,13 +20,27 @@ public class GoodListRepository {
     }
 
     public List<Good> shownow() {
-        String sql = "SELECT * FROM MLgood WHERE state = 0";
+        String sql = "SELECT * FROM MLgood WHERE state = 0 ORDER BY goodid";
         try {
             return jdbcTemplate.query(sql, BeanPropertyRowMapper.newInstance(Good.class));
         } catch (EmptyResultDataAccessException e) {
             // 如果查询结果为空，返回 null
             return null;
         }
+    }
+
+    public GoodPage showBuyerPage(String category, int page, int size) {
+        boolean allCategories = category == null || category.isBlank() || "全部".equals(category);
+        String condition = allCategories ? "state = 0" : "state = 0 AND kind = ?";
+        long total = allCategories
+                ? jdbcTemplate.queryForObject("SELECT COUNT(*) FROM MLgood WHERE " + condition, Long.class)
+                : jdbcTemplate.queryForObject("SELECT COUNT(*) FROM MLgood WHERE " + condition, Long.class, category);
+        String sql = "SELECT * FROM MLgood WHERE " + condition + " ORDER BY goodid LIMIT ? OFFSET ?";
+        long offset = ((long) page - 1) * size;
+        List<Good> items = allCategories
+                ? jdbcTemplate.query(sql, BeanPropertyRowMapper.newInstance(Good.class), size, offset)
+                : jdbcTemplate.query(sql, BeanPropertyRowMapper.newInstance(Good.class), category, size, offset);
+        return new GoodPage(items, total);
     }
 
     public List<Good> showHotGoods() {
