@@ -3,10 +3,43 @@
 CREATE TABLE IF NOT EXISTS MLuser  (
     userid INTEGER PRIMARY KEY AUTO_INCREMENT,
     username char(10) NOT NULL,
-    pwd char(15) NOT NULL,
+    pwd varchar(255) NOT NULL,
     power int NOT NULL,
     question varchar(50) NOT NULL,
-    answer varchar(30) NOT NULL
+    answer varchar(30) NOT NULL,
+    address_initialized BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE KEY uk_mluser_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Idempotent upgrades for existing accounts; legacy passwords remain readable.
+SET @account_migration = IF(
+    (SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'MLuser' AND column_name = 'pwd') < 255,
+    'ALTER TABLE MLuser MODIFY pwd VARCHAR(255) NOT NULL', 'SELECT 1');
+PREPARE account_stmt FROM @account_migration;
+EXECUTE account_stmt;
+DEALLOCATE PREPARE account_stmt;
+SET @account_migration = IF(
+    EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'MLuser' AND column_name = 'address_initialized'),
+    'SELECT 1', 'ALTER TABLE MLuser ADD address_initialized BOOLEAN NOT NULL DEFAULT FALSE');
+PREPARE account_stmt FROM @account_migration;
+EXECUTE account_stmt;
+DEALLOCATE PREPARE account_stmt;
+SET @account_migration = IF(
+    EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'MLuser' AND index_name = 'uk_mluser_username'),
+    'SELECT 1', 'ALTER TABLE MLuser ADD UNIQUE KEY uk_mluser_username (username)');
+PREPARE account_stmt FROM @account_migration;
+EXECUTE account_stmt;
+DEALLOCATE PREPARE account_stmt;
+
+CREATE TABLE IF NOT EXISTS MLaddress (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id INTEGER NOT NULL,
+    recipient VARCHAR(10) NOT NULL,
+    telephone VARCHAR(11) NOT NULL,
+    address VARCHAR(99) NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    KEY idx_mladdress_user (user_id, is_default),
+    FOREIGN KEY (user_id) REFERENCES MLuser(userid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS MLgood  (

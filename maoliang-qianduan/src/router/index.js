@@ -16,6 +16,7 @@ const SuccessComponent = () => import('@/components/SuccessComponent.vue');
 const SecretQuestionComponent = () => import('@/components/SecretQuestionComponent.vue');
 const BuyerHistory = () => import('@/components/BuyerHistory.vue');
 const BuyerLikes = () => import('@/components/BuyerLikes.vue');
+const AccountCenter = () => import('@/components/AccountCenter.vue');
 const BuyerCart = () => import('@/components/BuyerCart.vue');
 const BuyerFillInfo = () => import('@/components/BuyerFillInfo.vue');
 const BuyerShop = () => import('@/components/BuyerShop');
@@ -33,6 +34,7 @@ const BuyerPay = () => import('@/components/BuyerPay.vue');
 const routes = [
   { path: '/', redirect: '/buyer' },
   { path: '/login', component: LoginComponent },
+  { path: '/account', name: 'AccountCenter', component: AccountCenter },
   { path: '/error', component: ErrorComponent },
   { path: '/register', component: RegisterComponent },
   { path: '/choose-register', component: ChooseRegister },

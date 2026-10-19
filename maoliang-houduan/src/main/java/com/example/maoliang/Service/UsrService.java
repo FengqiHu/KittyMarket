@@ -43,6 +43,7 @@ public class UsrService {
     }
 
     public void register(Usr usr) throws SQLException {
+        usr.setPwd(AccountPasswords.encode(usr.getPwd()));
         usrRepository.register(usr);
     }
 

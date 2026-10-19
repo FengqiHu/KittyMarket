@@ -1127,7 +1127,6 @@ h1, h2, h3 {
 
 .checkout-layout {
   display: grid;
-  grid-template-columns: .8fr 1.2fr;
   gap: 24px;
 }
 
@@ -1295,7 +1294,11 @@ h1, h2, h3 {
 }
 
 .buyer-layout .app-header {
-  height: 76px;
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  height: auto;
+  min-height: 76px;
   padding: 0 max(24px, calc((100vw - 1200px) / 2));
 }
 
@@ -1306,11 +1309,10 @@ h1, h2, h3 {
 
 .store-navigation {
   display: flex;
-  gap: 30px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-  padding: 0 max(24px, calc((100vw - 1200px) / 2));
-  min-height: 46px;
+  flex: 1;
+  min-width: 0;
+  gap: 24px;
+  min-height: 76px;
   overflow-x: auto;
   white-space: nowrap;
 }
@@ -1320,7 +1322,7 @@ h1, h2, h3 {
   align-items: center;
   font-size: 14px;
   color: #454545;
-  padding: 12px 0 10px;
+  padding: 24px 0 22px;
   border-bottom: 2px solid transparent;
 }
 
@@ -1334,6 +1336,42 @@ h1, h2, h3 {
   margin-left: auto;
   color: #666;
   font-size: 13px;
+}
+
+.buyer-layout .header-account {
+  flex-shrink: 0;
+}
+
+.header-cart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 22px;
+  transition: background .15s, color .15s;
+}
+
+.header-cart:hover, .header-cart.is-active {
+  color: var(--orange);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-7);
+}
+
+@media (max-width: 1000px) {
+  .buyer-layout .app-header {
+    flex-wrap: wrap;
+    gap: 0 16px;
+    padding-top: 12px;
+  }
+
+  .buyer-layout .header-brand { flex: 1; }
+  .buyer-layout .store-navigation { order: 4; flex-basis: 100%; min-height: 44px; }
+  .store-navigation a { padding: 12px 0 10px; }
 }
 
 .category-toolbar {
@@ -1450,10 +1488,6 @@ h1, h2, h3 {
     transition: transform .2s ease;
   }
 
-  .buyer-layout .app-sidebar {
-    display: flex;
-  }
-
   .app-sidebar.is-open {
     transform: translateX(0);
   }
@@ -1466,6 +1500,12 @@ h1, h2, h3 {
     height: 60px;
     padding: 0 14px;
     gap: 10px;
+  }
+
+  .buyer-layout .app-header {
+    height: auto;
+    padding-top: 12px;
+    gap: 0 12px;
   }
 
   .header-brand {
@@ -1484,8 +1524,7 @@ h1, h2, h3 {
   }
 
   .store-navigation {
-    padding: 0 14px;
-    gap: 24px;
+    gap: 20px;
   }
 
   .store-navigation a {
@@ -1629,3 +1668,6 @@ h1, h2, h3 {
     margin: 8px 0 24px;
   }
 }
+
+.header-profile { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); border-radius: 20px; }
+.header-profile:hover { color: var(--orange); }

@@ -3,6 +3,7 @@ package com.example.maoliang.Controller;
 import com.example.maoliang.Controller.utils.Result;
 import com.example.maoliang.Entity.Good;
 import com.example.maoliang.Entity.Usr;
+import com.example.maoliang.Service.AccountService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,8 @@ public class SessionController {
 
     @Autowired
     public HttpSession session;
+    @Autowired
+    private AccountService accounts;
 
     @RequestMapping("/now-usr")
     @ResponseBody
@@ -25,6 +28,8 @@ public class SessionController {
         Usr usr = (Usr) session.getAttribute("admin");
 
         if (usr != null) {
+            usr = accounts.current(usr.getUserid());
+            session.setAttribute("admin", usr);
             return usr;
         } else {
             return null;

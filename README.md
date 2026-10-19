@@ -134,6 +134,12 @@ docker compose exec redis redis-cli DEL 'kittymarket:{hot-goods}:v1' 'kittymarke
 
 参考：[LangChain4j RAG](https://docs.langchain4j.dev/tutorials/rag/)、[阿里云百炼向量模型](https://help.aliyun.com/en/model-studio/embedding)。
 
+### 个人管理与收货地址
+
+登录后点击顶栏头像进入 `/account`，可查看历史订单、收藏，修改账号名称和密码，并管理多条收货地址。个人页与结算页共用地址簿，支持新增、编辑、删除和设置默认地址；结算默认选中默认地址，修改地址不会影响已提交订单。
+
+账号与地址接口位于 `/account`，操作对象由登录会话确定。启动时自动扩展密码字段、添加账号名称唯一约束并创建 `MLaddress`；首次打开地址簿时导入原有有效地址，之后不会重复导入。新设置的密码使用 PBKDF2 哈希，原有密码可继续登录；修改账号名称会在同一事务中同步历史订单的账号关联。
+
 ### 界面与验证
 
 前端使用适配 Vue 3 的 Element Plus，统一了登录注册、买家商城、购物车、收藏、猫咪档案和卖家后台的布局、表格、表单及操作反馈。商城使用顶部导航和商品分类，商家后台使用侧栏和紧凑表格；支持窄屏菜单，页面和组件按需加载。

@@ -5,7 +5,6 @@
         <h1 id="hot-goods-title">热门商品</h1>
         <p>{{ isBuyer ? '结合你的浏览、购买偏好与猫咪档案，为你推荐好物' : '发现人气好物，登录后获取专属推荐' }}</p>
       </div>
-      <el-button @click="$router.push('/buyer-show-recommend')">根据猫咪档案选粮<el-icon class="icon-after"><IconArrowRight /></el-icon></el-button>
     </div>
     <form class="search-toolbar surface" @submit.prevent="handleSearch">
       <el-input v-model="searchQuery" placeholder="描述想找的商品，例如适合幼猫的鸡肉主粮" size="large" clearable>

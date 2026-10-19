@@ -38,6 +38,8 @@ public class OrderService {
 
     @Autowired
     private CatalogIndexOutbox catalogIndexOutbox;
+    @Autowired
+    private AccountService accounts;
 
     @Transactional
     public List<Order> createCartOrders(CreateCartOrderData request, Usr buyer) {
@@ -67,6 +69,8 @@ public class OrderService {
     @Transactional
     public Order createOrder(CreateOrderData request, Usr buyer) {
         if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
+        // Serialize account renames with order creation so legacy buyer-name references stay valid.
+        buyer = accounts.lockUser(buyer.getUserid());
         if (request.goodid() == null || request.goodid() < 1 || request.number() == null || request.number() < 1) {
             throw new IllegalArgumentException("请选择有效商品和购买数量");
         }
@@ -123,7 +127,8 @@ public class OrderService {
 
     @Transactional
     public boolean deleteOrder(int orderid, int orderstate, Usr user) {
-        if (user == null || orderstate != -1) return false;
+        if (user == null || user.getUserid() < 1 || orderstate != -1) return false;
+        user = accounts.current(user.getUserid());
         Order order = orderRepository.lockOrder(orderid);
         if (order == null || order.getOrderstate() < 1 || order.getOrderstate() >= 4) return false;
         boolean buyer = order.getBuyername().trim().equals(user.getUsername().trim());

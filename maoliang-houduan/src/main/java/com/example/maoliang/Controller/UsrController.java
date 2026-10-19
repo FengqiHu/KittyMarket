@@ -6,6 +6,8 @@ import com.example.maoliang.Entity.Good;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Service.GoodService;
 import com.example.maoliang.Service.UsrService;
+import com.example.maoliang.Service.AccountService;
+import com.example.maoliang.Service.AccountPasswords;
 import com.example.maoliang.dto.*;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +30,8 @@ public class UsrController {
     @Autowired
     private UsrService usrService;
     @Autowired
+    private AccountService accounts;
+    @Autowired
     private GoodService goodService;
     @Autowired
     public HttpSession session;//存储session数据
@@ -40,7 +44,7 @@ public class UsrController {
         String pwd = login.getPassword();
         try {
             Usr usr = usrService.search(username);
-            if (usr != null && pwd.equals(usr.getPwd().trim())) {//数据库导出字符串有后置空格
+            if (usr != null && AccountPasswords.matches(pwd, usr.getPwd())) {
                 System.out.println(usr.getPower());
                 session.setAttribute("admin", usr);
 
@@ -114,20 +118,13 @@ public class UsrController {
     @RequestMapping( "/changedpwd-control")
     public Result changedpwd(@RequestBody Changedpwddata changedpwddata) throws SQLException {
         Usr usr = (Usr) session.getAttribute("admin");
-        String userpwd=usr.getPwd().trim();
-        String oldpwd=changedpwddata.getOldpwd();
-        String newpwd=changedpwddata.getNewpwd();
-        String newpwd1=changedpwddata.getNewpwd1();
-        String username=((Usr)session.getAttribute("admin")).getUsername();
-        if (!userpwd.equals(oldpwd)) {
-            return new Result(ERROR_PAGE,"旧密码错误",UPDATEPWD_PAGE);
-        } else if (oldpwd.equals(newpwd)) {
-            return new Result(ERROR_PAGE,"新密码与旧密码一致",UPDATEPWD_PAGE);
-        } else if (!newpwd.equals(newpwd1)) {
-            return new Result(ERROR_PAGE,"新密码与确认密码不一致",UPDATEPWD_PAGE);
-        } else {
-            usrService.modifyPwd(username,newpwd);
-            return new Result(SELLER_PAGE,"密码修改成功！",null);
+        if (usr == null) return new Result(ERROR_PAGE, "请先登录", null);
+        try {
+            accounts.changePassword(usr.getUserid(), new AccountPasswordData(changedpwddata.getOldpwd(), changedpwddata.getNewpwd(), changedpwddata.getNewpwd1()));
+            session.setAttribute("admin", accounts.current(usr.getUserid()));
+            return new Result(usr.getPower() == 1 ? SELLER_PAGE : BUYER_PAGE, "密码修改成功！", null);
+        } catch (IllegalArgumentException error) {
+            return new Result(ERROR_PAGE, error.getMessage(), UPDATEPWD_PAGE);
         }
     }
 

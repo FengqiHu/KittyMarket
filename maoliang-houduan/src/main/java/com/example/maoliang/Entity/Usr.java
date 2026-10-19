@@ -1,4 +1,5 @@
 package com.example.maoliang.Entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -73,6 +74,7 @@ public class Usr {
 		this.question = question;
 	}
 
+	@JsonIgnore
 	public String getAnswer() {
 		return answer;
 	}
@@ -97,6 +99,7 @@ public class Usr {
 		this.username = username;
 	}
 
+	@JsonIgnore
 	public String getPwd() {
 		return pwd;
 	}
