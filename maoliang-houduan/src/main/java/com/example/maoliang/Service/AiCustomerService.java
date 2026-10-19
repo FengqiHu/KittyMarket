@@ -142,17 +142,35 @@ public class AiCustomerService {
         String intent = detectIntent(query);
         PreferenceSignal prefSignal = repository.loadUserPreferences(
                 userId, user != null ? user.getUsername() : null);
+        List<AiCustomerServiceRepository.CartItemSummary> cartItems = repository.findUserCartItems(userId);
 
         List<AiCsRecommendedProduct> recommended = List.of();
         List<AiCsOrderSummary> orderCards = List.of();
         String orderActionNotice = "";
+        String feedingPlanContext = "";
+        String cartAndCompareContext = "";
 
-        if ("shopping_guide".equals(intent)) {
-            recommended = recommendThreeProducts(query, user, prefSignal);
-        } else if ("order_support".equals(intent)) {
-            OrderSupportOutcome outcome = handleOrderSupport(query, user);
-            orderCards = outcome.displayOrders();
-            orderActionNotice = outcome.actionNotice();
+        switch (intent) {
+            case "shopping_guide" -> recommended = recommendThreeProducts(query, user, prefSignal);
+            case "product_comparison" -> {
+                recommended = recommendComboOrCompareProducts(query, user, prefSignal);
+                cartAndCompareContext = buildComparisonOrComboContext(query, recommended);
+            }
+            case "feeding_advisor" -> {
+                recommended = recommendThreeProducts(query, user, prefSignal);
+                feedingPlanContext = buildFeedingPlanContext(query, prefSignal);
+            }
+            case "cart_advisor" -> {
+                recommended = recommendCartComplements(query, user, prefSignal, cartItems);
+                cartAndCompareContext = buildCartDiagnosisContext(user, cartItems, recommended);
+            }
+            case "order_support" -> {
+                OrderSupportOutcome outcome = handleOrderSupport(query, user);
+                orderCards = outcome.displayOrders();
+                orderActionNotice = outcome.actionNotice();
+            }
+            default -> {
+            }
         }
 
         String provider = "local";
@@ -164,7 +182,7 @@ public class AiCustomerService {
             try {
                 DifyResult difyResult = callDifyChat(
                         query, intent, user, userKey, prefSignal, recommended, orderCards,
-                        orderActionNotice, conv.difyConversationId());
+                        orderActionNotice, feedingPlanContext, cartAndCompareContext, conv.difyConversationId());
                 if (difyResult != null && difyResult.answer() != null && !difyResult.answer().isBlank()) {
                     answer = difyResult.answer().trim();
                     newDifyConvId = difyResult.conversationId();
@@ -179,7 +197,8 @@ public class AiCustomerService {
         if (answer == null && qwenChatModel != null) {
             try {
                 String qwenReply = callQwenChat(
-                        query, intent, user, prefSignal, recommended, orderCards, orderActionNotice, history);
+                        query, intent, user, prefSignal, recommended, orderCards,
+                        orderActionNotice, feedingPlanContext, cartAndCompareContext, history);
                 if (qwenReply != null && !qwenReply.isBlank()) {
                     answer = qwenReply.trim();
                     provider = "qwen";
@@ -191,7 +210,9 @@ public class AiCustomerService {
 
         // 3. Deterministic local fallback
         if (answer == null || answer.isBlank()) {
-            answer = buildLocalReply(query, intent, user, prefSignal, recommended, orderCards, orderActionNotice);
+            answer = buildLocalReply(
+                    query, intent, user, prefSignal, recommended, orderCards,
+                    orderActionNotice, feedingPlanContext, cartAndCompareContext);
             provider = "local";
         }
 
@@ -269,18 +290,27 @@ public class AiCustomerService {
         String q = query.toLowerCase(Locale.ROOT);
         boolean hasOrderKeyword = containsAny(q,
                 "订单", "发货", "物流", "快递", "取消订单", "退货", "退款", "换货", "售后",
-                "收货", "催单", "发了没", "还没到", "查单", "订单号", "交易取消", "待确认", "备货");
+                "收货", "催单", "发了没", "还没到", "查单", "订单号", "交易取消", "待确认", "备货", "破袋", "发错");
+        if (hasOrderKeyword && containsAny(q, "取消", "退", "发货", "物流", "订单", "收货", "催", "查单", "售后", "破袋")) {
+            return "order_support";
+        }
+        if (containsAny(q, "购物车", "凑单", "诊断购物车", "收藏夹诊断", "缺什么品类")) {
+            return "cart_advisor";
+        }
+        if (containsAny(q, "对比", "比较", "区别", "怎么选", "哪个更好", "套餐", "组合", "全套", "搭配一套", "三件套", "主粮+零食")) {
+            return "product_comparison";
+        }
+        if (containsAny(q, "吃多少", "多少克", "喂食量", "食量", "一天吃", "每天吃", "换粮", "七日", "7日",
+                "软便", "拉稀", "呕吐", "吐毛球", "掉毛", "泪痕", "黑下巴", "挑食", "喝水", "饮水量", "怎么喂", "科学喂养")) {
+            return "feeding_advisor";
+        }
         boolean hasShoppingKeyword = containsAny(q,
                 "推荐", "导购", "选粮", "买什么", "哪款", "哪个好", "适合", "猫粮", "主粮", "零食",
                 "日用", "罐头", "冻干", "猫条", "猫砂", "猫抓板", "玩具", "饮水", "幼猫", "成猫",
                 "绝育", "减重", "控重", "低脂", "鸡肉", "三文鱼", "牛肉", "鱼", "化毛", "肠胃",
                 "高蛋白", "性价比", "便宜", "好物", "偏好", "营养", "几款", "三款", "3款");
-        if (hasOrderKeyword && !hasShoppingKeyword) return "order_support";
-        if (hasShoppingKeyword && !hasOrderKeyword) return "shopping_guide";
-        if (hasOrderKeyword && hasShoppingKeyword) {
-            if (containsAny(q, "取消", "退", "发货", "物流", "订单", "收货")) return "order_support";
-            return "shopping_guide";
-        }
+        if (hasOrderKeyword) return "order_support";
+        if (hasShoppingKeyword) return "shopping_guide";
         return "general";
     }
 
@@ -436,6 +466,177 @@ public class AiCustomerService {
                 .toList();
     }
 
+    /**
+     * 针对「多商品对比测评 / 主粮+零食+日用套餐搭配」场景挑选 3 款商品：
+     * - 若用户请求套餐/组合/全套搭配：从「猫咪主粮」「猫咪零食」「猫咪日用」三大类中各选 1 款最高分商品组成 3 件套；
+     * - 若用户请求同品类对比测评：返回最契合对比关键词的 3 款商品。
+     */
+    public List<AiCsRecommendedProduct> recommendComboOrCompareProducts(String query, Usr user, PreferenceSignal prefSignal) {
+        String q = query.toLowerCase(Locale.ROOT);
+        boolean isCombo = containsAny(q, "套餐", "组合", "全套", "搭配一套", "三件套", "主粮+零食");
+        if (!isCombo) {
+            return recommendThreeProducts(query, user, prefSignal);
+        }
+        String[] targetKinds = {"猫咪主粮", "猫咪零食", "猫咪日用"};
+        List<AiCsRecommendedProduct> combo = new ArrayList<>();
+        Set<Integer> pickedIds = new HashSet<>();
+        for (String kind : targetKinds) {
+            List<AiCsRecommendedProduct> candidates = recommendThreeProducts(kind + " " + query, user, prefSignal);
+            candidates.stream()
+                    .filter(p -> kind.equals(p.kind()) && !pickedIds.contains(p.goodid()))
+                    .findFirst()
+                    .ifPresent(p -> {
+                        pickedIds.add(p.goodid());
+                        combo.add(new AiCsRecommendedProduct(
+                                p.goodid(), p.goodname(), p.kind(), p.subkind(), p.price(),
+                                p.picture(), p.description(), p.number(), p.catkind(),
+                                p.catage(), p.catweight(), "【" + kind + "搭配优选】" + p.matchReason()
+                        ));
+                    });
+        }
+        if (combo.size() < RECOMMEND_COUNT) {
+            for (AiCsRecommendedProduct fallback : recommendThreeProducts(query, user, prefSignal)) {
+                if (combo.size() >= RECOMMEND_COUNT) break;
+                if (pickedIds.add(fallback.goodid())) {
+                    combo.add(fallback);
+                }
+            }
+        }
+        return combo;
+    }
+
+    /**
+     * 针对「购物车诊断与凑单推荐」场景：分析用户购物车已有商品，优先从缺失品类中推荐 3 款不在购物车中的互补好物。
+     */
+    public List<AiCsRecommendedProduct> recommendCartComplements(
+            String query, Usr user, PreferenceSignal prefSignal,
+            List<AiCustomerServiceRepository.CartItemSummary> cartItems) {
+        Set<Integer> inCartIds = cartItems == null ? Set.of()
+                : cartItems.stream().map(AiCustomerServiceRepository.CartItemSummary::goodid).collect(Collectors.toSet());
+        Set<String> inCartKinds = cartItems == null ? Set.of()
+                : cartItems.stream().map(AiCustomerServiceRepository.CartItemSummary::kind).collect(Collectors.toSet());
+
+        List<String> allKinds = List.of("猫咪主粮", "猫咪零食", "猫咪日用");
+        List<String> missingKinds = allKinds.stream().filter(k -> !inCartKinds.contains(k)).toList();
+
+        List<AiCsRecommendedProduct> result = new ArrayList<>();
+        Set<Integer> picked = new HashSet<>(inCartIds);
+
+        for (String missingKind : missingKinds) {
+            List<AiCsRecommendedProduct> candidates = recommendThreeProducts(missingKind, user, prefSignal);
+            for (AiCsRecommendedProduct c : candidates) {
+                if (missingKind.equals(c.kind()) && picked.add(c.goodid())) {
+                    result.add(new AiCsRecommendedProduct(
+                            c.goodid(), c.goodname(), c.kind(), c.subkind(), c.price(),
+                            c.picture(), c.description(), c.number(), c.catkind(),
+                            c.catage(), c.catweight(), "补齐购物车缺失的「" + missingKind + "」· " + c.matchReason()
+                    ));
+                    break;
+                }
+            }
+        }
+        for (AiCsRecommendedProduct c : recommendThreeProducts(query, user, prefSignal)) {
+            if (result.size() >= RECOMMEND_COUNT) break;
+            if (picked.add(c.goodid())) {
+                result.add(c);
+            }
+        }
+        return result.stream().limit(RECOMMEND_COUNT).toList();
+    }
+
+    /**
+     * 基于用户猫咪档案（体重、年龄、生理状态）计算科学每日能量需求 (RER/DER)、建议喂食克数区间、饮水量与换粮指南。
+     */
+    public String buildFeedingPlanContext(String query, PreferenceSignal prefSignal) {
+        StringBuilder sb = new StringBuilder();
+        List<Cat> cats = prefSignal != null && prefSignal.cats() != null ? prefSignal.cats() : List.of();
+        if (!cats.isEmpty()) {
+            for (Cat cat : cats) {
+                double weight = Math.max(0.5, cat.getCatweight());
+                double rer = 70.0 * Math.pow(weight, 0.75);
+                double factor = switch (cat.getCatstate()) {
+                    case 1 -> 0.85; // 需要减重
+                    case 2 -> 1.10; // 室内猫
+                    case 3 -> 1.20; // 已绝育
+                    case 4 -> 1.40; // 正常成猫
+                    case 5 -> 1.80; // 妊娠期
+                    case 6 -> 2.20; // 哺乳期
+                    case 7 -> 2.50; // 幼猫期
+                    default -> 1.25;
+                };
+                double derKcal = rer * factor;
+                int minGrams = (int) Math.round(derKcal / 4.1);
+                int maxGrams = (int) Math.round(derKcal / 3.5);
+                int waterMl = (int) Math.round(weight * 50);
+                String meals = cat.getCatage() <= 1 || cat.getCatstate() == 7 ? "建议少食多餐（每日 3~4 餐）" : "建议定时定量（每日 2~3 餐）";
+                sb.append("• 爱猫「").append(safe(cat.getCatname())).append("」（")
+                        .append(safe(cat.getCatkind())).append("，").append(cat.getCatage()).append("岁，")
+                        .append(weight).append("kg，").append(catStateLabel(cat.getCatstate())).append("）：")
+                        .append("每日代谢能量需求约 ").append(Math.round(derKcal)).append(" kcal，")
+                        .append("建议每日干粮喂食量 **").append(minGrams).append("g ~ ").append(maxGrams).append("g**（")
+                        .append(meals).append("），建议每日饮水量约 **").append(waterMl).append("ml**。\n");
+            }
+        } else {
+            sb.append("• 标准体重喂食参考：幼猫(1~2kg)每日约 35g~55g（分3~4餐）；成猫(3~5kg)每日约 50g~75g（分2~3餐）；绝育/控重猫建议按标准量下调 15%，每日饮水量约为体重(kg)×50ml。\n");
+        }
+        sb.append("• 科学七日换粮法：第1~2天（25%新粮+75%旧粮）→ 第3~4天（50%新粮+50%旧粮）→ 第5~6天（75%新粮+25%旧粮）→ 第7天（100%新粮），保护脆弱肠胃防止软便。");
+        return sb.toString();
+    }
+
+    public String buildComparisonOrComboContext(String query, List<AiCsRecommendedProduct> products) {
+        if (products == null || products.isEmpty()) return "暂无可对比商品";
+        String q = query.toLowerCase(Locale.ROOT);
+        boolean isCombo = containsAny(q, "套餐", "组合", "全套", "搭配一套", "三件套", "主粮+零食");
+        double total = products.stream().mapToDouble(AiCsRecommendedProduct::price).sum();
+        StringBuilder sb = new StringBuilder();
+        if (isCombo) {
+            sb.append("【主粮+零食+日用 一站式三件套组合】组合总价：¥").append(String.format("%.2f", total)).append("\n");
+        } else {
+            sb.append("【多商品四维横向测评对比表】\n");
+        }
+        for (int i = 0; i < products.size(); i++) {
+            AiCsRecommendedProduct p = products.get(i);
+            sb.append(i + 1).append(". ").append(p.goodname())
+                    .append(" | 品类定位: ").append(p.kind()).append("·").append(p.subkind())
+                    .append(" | 单价: ¥").append(String.format("%.2f", p.price()))
+                    .append(" | 适用阶段: ").append(p.catkind()).append(" (").append(p.catage()).append("岁, ").append(p.catweight()).append("kg)")
+                    .append(" | 核心亮点: ").append(p.description())
+                    .append(" | 匹配依据: ").append(p.matchReason()).append("\n");
+        }
+        return sb.toString().trim();
+    }
+
+    public String buildCartDiagnosisContext(Usr user,
+                                            List<AiCustomerServiceRepository.CartItemSummary> cartItems,
+                                            List<AiCsRecommendedProduct> complements) {
+        if (user == null) {
+            return "用户尚未登录，无法读取个人购物车；已根据热门全品类组合生成3款推荐。";
+        }
+        if (cartItems == null || cartItems.isEmpty()) {
+            return "用户当前购物车为空；建议从主粮、零食、日用三个核心品类中挑选心仪好物加入购物车。";
+        }
+        double totalAmount = cartItems.stream().mapToDouble(i -> i.price() * i.quantity()).sum();
+        int totalCount = cartItems.stream().mapToInt(AiCustomerServiceRepository.CartItemSummary::quantity).sum();
+        Set<String> presentKinds = cartItems.stream().map(AiCustomerServiceRepository.CartItemSummary::kind).collect(Collectors.toSet());
+        List<String> allKinds = List.of("猫咪主粮", "猫咪零食", "猫咪日用");
+        List<String> missingKinds = allKinds.stream().filter(k -> !presentKinds.contains(k)).toList();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("当前购物车共 ").append(cartItems.size()).append(" 种商品（合计 ").append(totalCount)
+                .append(" 件，总计 ¥").append(String.format("%.2f", totalAmount)).append("）：\n");
+        for (AiCustomerServiceRepository.CartItemSummary item : cartItems) {
+            sb.append("- ").append(item.goodname()).append("（").append(item.kind()).append("/").append(item.subkind())
+                    .append("）× ").append(item.quantity()).append(" 件，单价 ¥").append(String.format("%.2f", item.price())).append("\n");
+        }
+        if (missingKinds.isEmpty()) {
+            sb.append("结构诊断：购物车已覆盖主粮、零食、日用三大品类，营养与日常护理结构非常均衡！");
+        } else {
+            sb.append("结构诊断：当前购物车暂缺【").append(String.join("、", missingKinds))
+                    .append("】品类，已为您在下方的推荐卡片中精选互补凑单好物。");
+        }
+        return sb.toString();
+    }
+
     private OrderSupportOutcome handleOrderSupport(String query, Usr user) {
         if (user == null || user.getUserid() < 1) {
             return new OrderSupportOutcome(List.of(), "用户当前尚未登录，无法查询或操作个人订单，请引导用户先登录账号。");
@@ -514,6 +715,8 @@ public class AiCustomerService {
                                     List<AiCsRecommendedProduct> recommended,
                                     List<AiCsOrderSummary> orders,
                                     String orderActionNotice,
+                                    String feedingPlanContext,
+                                    String cartAndCompareContext,
                                     String difyConversationId) throws Exception {
         String userProfileText = buildUserProfileSummary(user, prefSignal);
         String prefText = buildPreferenceSummary(prefSignal);
@@ -527,9 +730,11 @@ public class AiCustomerService {
         inputs.put("recommended_products", recText);
         inputs.put("user_orders", orderText);
         inputs.put("order_action_result", orderActionNotice == null ? "" : orderActionNotice);
+        inputs.put("feeding_plan", feedingPlanContext == null ? "" : feedingPlanContext);
+        inputs.put("cart_and_compare", cartAndCompareContext == null ? "" : cartAndCompareContext);
 
         String contextualQuery = buildContextualPromptForDify(
-                query, intent, userProfileText, prefText, recText, orderText);
+                query, intent, userProfileText, prefText, recText, orderText, feedingPlanContext, cartAndCompareContext);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("inputs", inputs);
@@ -564,6 +769,8 @@ public class AiCustomerService {
                                 List<AiCsRecommendedProduct> recommended,
                                 List<AiCsOrderSummary> orders,
                                 String orderActionNotice,
+                                String feedingPlanContext,
+                                String cartAndCompareContext,
                                 List<AiCsMessageView> history) {
         String userProfileText = buildUserProfileSummary(user, prefSignal);
         String prefText = buildPreferenceSummary(prefSignal);
@@ -580,24 +787,35 @@ public class AiCustomerService {
         }
 
         String prompt = """
-                你是「猫咪美食坊」官方 AI 智能客服（接入 Dify 智能客服体系），负责提供贴心的猫咪商品导购与订单售后支持。
+                你是「猫咪美食坊」官方 AI 智能客服（接入 Dify 多节点智能客服工作流），负责提供多维度的猫咪商城专家服务。
                 请严格遵守以下规则：
-                1. 只根据下方提供的真实商城商品数据与真实订单数据回答，绝不编造不存在的商品、价格或订单。
-                2. 当任务是「导购推荐 (shopping_guide)」时：结合用户的需求与用户偏好，热情、专业地向用户介绍下方已为你筛选好的 3 款商品（说明每款商品的价格、亮点以及为什么契合用户的偏好或猫咪情况）。商品卡片会自动展示在你的回复下方。
-                3. 当任务是「订单支持 (order_support)」时：根据下方订单列表与操作结果解答订单状态、取消未发货订单（状态1~3可取消）、确认收货（状态4可确认），或解答退换货/发货政策（现货24小时内发货；未发货可直接取消并自动退回库存；收货后7天内质量问题包退换）。
-                4. 语气亲切自然、条理清晰，控制在 220 字以内。
+                1. 只根据下方提供的真实商城商品数据、猫咪档案测算与真实订单数据回答，绝不编造不存在的商品、价格或订单。
+                2. 当意图为「导购推荐 (shopping_guide)」时：结合用户的需求与历史偏好，热情介绍下方筛选好的 3 款商品（价格、亮点、契合理由）。
+                3. 当意图为「商品对比与套餐搭配 (product_comparison)」时：基于【对比测评/套餐数据】横向对比 3 款商品的核心差异与性价比，或介绍主粮+零食+日用三件套组合。
+                4. 当意图为「科学喂养顾问 (feeding_advisor)」时：先给出【科学喂食量与养护测算】中的每日克数、饮水量或七日换粮建议，再自然引出下方匹配的 3 款营养/调理商品。
+                5. 当意图为「购物车诊断与凑单 (cart_advisor)」时：基于【购物车诊断数据】点评已选商品结构，并介绍下方推荐的 3 款互补凑单好物。
+                6. 当意图为「订单支持 (order_support)」时：解答订单状态、取消未发货订单（状态1~3可取消）、确认收货（状态4可确认），或解答退换货政策（现货24小时内发货；签收7天内质量问题免费退换）。
+                7. 语气亲切自然、条理清晰，控制在 260 字以内。
 
                 【当前意图】：%s
                 【用户信息与猫咪档案】：%s
                 【用户历史偏好】：%s
                 【为您精选的 3 款推荐商品】：
                 %s
+                【科学喂食量与养护测算】：
+                %s
+                【对比测评 / 购物车诊断数据】：
+                %s
                 【用户最近订单与操作状态】：
                 %s
                 【近期对话上下文】：
                 %s
                 【用户当前提问】：%s
-                """.formatted(intent, userProfileText, prefText, recText, orderText, historyText, query);
+                """.formatted(
+                intent, userProfileText, prefText, recText,
+                feedingPlanContext == null || feedingPlanContext.isBlank() ? "无" : feedingPlanContext,
+                cartAndCompareContext == null || cartAndCompareContext.isBlank() ? "无" : cartAndCompareContext,
+                orderText, historyText, query);
 
         return qwenChatModel.chat(prompt);
     }
@@ -608,7 +826,63 @@ public class AiCustomerService {
                                    PreferenceSignal prefSignal,
                                    List<AiCsRecommendedProduct> recommended,
                                    List<AiCsOrderSummary> orders,
-                                   String orderActionNotice) {
+                                   String orderActionNotice,
+                                   String feedingPlanContext,
+                                   String cartAndCompareContext) {
+        if ("feeding_advisor".equals(intent)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("🐾 **猫咪科学喂养与营养健康建议**：\n")
+                    .append(feedingPlanContext).append("\n\n");
+            if (!recommended.isEmpty()) {
+                sb.append("同时为您搭配了以下 ").append(recommended.size()).append(" 款契合营养与调理需求的现货好物：\n");
+                for (int i = 0; i < recommended.size(); i++) {
+                    AiCsRecommendedProduct p = recommended.get(i);
+                    sb.append(i + 1).append(". **").append(p.goodname()).append("**（¥")
+                            .append(String.format("%.2f", p.price())).append(" · ").append(p.kind()).append("/").append(p.subkind())
+                            .append("）— ").append(p.matchReason()).append("\n");
+                }
+            }
+            return sb.toString().trim();
+        }
+
+        if ("product_comparison".equals(intent)) {
+            StringBuilder sb = new StringBuilder();
+            String q = query.toLowerCase(Locale.ROOT);
+            boolean isCombo = containsAny(q, "套餐", "组合", "全套", "搭配一套", "三件套", "主粮+零食");
+            double total = recommended.stream().mapToDouble(AiCsRecommendedProduct::price).sum();
+            if (isCombo) {
+                sb.append("🎁 **为您定制「主粮 + 零食 + 日用」一站式三件套组合**（套餐合计 **¥")
+                        .append(String.format("%.2f", total)).append("**）：\n\n");
+            } else {
+                sb.append("⚖️ **为您整理候选商品多维横向对比测评**：\n\n");
+            }
+            for (int i = 0; i < recommended.size(); i++) {
+                AiCsRecommendedProduct p = recommended.get(i);
+                sb.append(i + 1).append(". **").append(p.goodname()).append("**（¥")
+                        .append(String.format("%.2f", p.price())).append(" · ").append(p.kind()).append("/").append(p.subkind()).append("）\n")
+                        .append("   - **适用对象**：").append(p.catkind()).append("（").append(p.catage()).append("岁 · ").append(p.catweight()).append("kg）\n")
+                        .append("   - **核心亮点与定位**：").append(p.description()).append("（").append(p.matchReason()).append("）\n");
+            }
+            sb.append("\n💡 **选购建议**：追求高肉含量与成长期营养可选第 1 款，注重适口性与性价比可搭配第 2、3 款，点击下方卡片即可一键加购！");
+            return sb.toString();
+        }
+
+        if ("cart_advisor".equals(intent)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("🛒 **购物车结构诊断与凑单建议**：\n")
+                    .append(cartAndCompareContext).append("\n\n");
+            if (!recommended.isEmpty()) {
+                sb.append("为您精选以下 **").append(recommended.size()).append(" 款互补凑单好物**：\n");
+                for (int i = 0; i < recommended.size(); i++) {
+                    AiCsRecommendedProduct p = recommended.get(i);
+                    sb.append(i + 1).append(". **").append(p.goodname()).append("**（¥")
+                            .append(String.format("%.2f", p.price())).append(" · ").append(p.kind()).append("/").append(p.subkind())
+                            .append("）— ").append(p.matchReason()).append("\n");
+                }
+            }
+            return sb.toString().trim();
+        }
+
         if ("shopping_guide".equals(intent)) {
             if (recommended.isEmpty()) {
                 return "抱歉，当前暂无符合该条件的在售现货商品。您可以尝试换个关键词（如「幼猫主粮」「冻干零食」「猫砂」），我再为您挑选中意好物！";
@@ -641,7 +915,7 @@ public class AiCustomerService {
                 sb.append(orderActionNotice).append("\n\n");
             }
             String q = query.toLowerCase(Locale.ROOT);
-            if (containsAny(q, "退货", "退款", "换货", "售后", "多久发货", "什么时候发货", "运费", "保质期")) {
+            if (containsAny(q, "退货", "退款", "换货", "售后", "多久发货", "什么时候发货", "运费", "保质期", "破袋", "发错")) {
                 sb.append("📋 **售后服务与发货说明**：\n")
                         .append("• **发货时效**：店内现货商品下单后 24 小时内由商家确认并安排备货发出。\n")
                         .append("• **修改/取消订单**：订单处于「等待商家确认 / 等待备货确认 / 等待发货确认」（未发货）阶段时，您可以直接在下方订单卡片点击「取消订单」，库存将自动恢复。\n")
@@ -667,10 +941,14 @@ public class AiCustomerService {
 
         // General greeting or FAQ
         String greetingName = user != null ? " " + safe(user.getUsername()) : "";
-        return "您好" + greetingName + "！我是猫咪美食坊 AI 智能客服 🐾\n"
-                + "我可以为您提供以下贴心服务：\n"
-                + "1. **专属导购推荐**：告诉我您的需求（如「推荐适合幼猫的主粮」「推荐3款高性价比零食」「按我的偏好推荐」），我会结合您的偏好与猫咪档案为您推荐 **3 款商品**。\n"
-                + "2. **订单查询与处理**：随时查询您的订单状态、直接在对话中**取消未发货订单**或**确认收货**，以及解答退换货与发货疑问。";
+        return "您好" + greetingName + "！我是猫咪美食坊 AI 智能客服 🐾（由 Dify 多分支专家工作流驱动）\n"
+                + "我可以为您提供以下六大贴心服务：\n"
+                + "1. **专属导购推荐**：结合您的浏览/收藏/购买偏好与猫咪档案精准推荐 **3 款商品**。\n"
+                + "2. **多商品对比与套餐搭配**：为您横向测评不同猫粮配方，或一键定制「主粮+零食+日用」三件套。\n"
+                + "3. **科学喂养与食量测算**：根据爱猫体重与生理状态计算每日建议喂食克数、饮水量及七日换粮法。\n"
+                + "4. **购物车智能诊断**：分析您购物车的品类结构并推荐互补凑单好物。\n"
+                + "5. **订单查询与对话式操作**：随时查询订单进度、直接在对话中**取消未发货订单**或**确认收货**。\n"
+                + "6. **售后保障与商城向导**：解答 24h 发货时效、7 天退换货政策与账号地址簿管理问题。";
     }
 
     private String buildContextualPromptForDify(String query,
@@ -678,20 +956,30 @@ public class AiCustomerService {
                                                 String userProfileText,
                                                 String prefText,
                                                 String recText,
-                                                String orderText) {
+                                                String orderText,
+                                                String feedingPlanContext,
+                                                String cartAndCompareContext) {
         return """
                 [系统上下文 - 猫咪美食坊AI客服]
                 当前识别意图: %s
                 用户信息与猫咪档案: %s
                 用户偏好画像: %s
-                为您匹配好的3款推荐商品(导购需求时请重点向用户介绍这3款商品):
+                为您匹配好的3款推荐商品(导购/对比/喂养/凑单需求时请重点介绍这3款商品):
                 %s
-                用户订单状态与操作记录(订单问题时请基于此回答):
+                科学喂养与每日食量测算(喂养健康咨询时请基于此回答):
+                %s
+                多商品对比测评或购物车诊断数据(对比/套餐/购物车咨询时请基于此回答):
+                %s
+                用户订单状态与操作记录(订单与售后问题时请基于此回答):
                 %s
 
                 [用户问题]
                 %s
-                """.formatted(intent, userProfileText, prefText, recText, orderText, query);
+                """.formatted(
+                intent, userProfileText, prefText, recText,
+                feedingPlanContext == null || feedingPlanContext.isBlank() ? "无" : feedingPlanContext,
+                cartAndCompareContext == null || cartAndCompareContext.isBlank() ? "无" : cartAndCompareContext,
+                orderText, query);
     }
 
     private String buildUserProfileSummary(Usr user, PreferenceSignal prefSignal) {

@@ -133,4 +133,72 @@ public class AiCustomerServiceController {
         List<AiCsOrderSummary> orders = repository.findUserOrders(buyerName);
         return new Result("success", "查询订单成功", orders);
     }
+
+    /**
+     * Dify 外部 HTTP 工具接口：根据猫咪档案测算每日建议喂食克数、饮水量与推荐调理好物。
+     */
+    @GetMapping("/dify-tools/feeding-plan")
+    public Result difyToolFeedingPlan(@RequestParam(defaultValue = "") String query,
+                                      @RequestParam(required = false) Integer userId,
+                                      @RequestHeader(value = "X-Dify-Tool-Token", defaultValue = "") String token) {
+        if (!aiCustomerService.verifyToolToken(token)) {
+            return new Result("error", "Invalid Dify tool token", null);
+        }
+        Usr user = resolveToolUser(userId);
+        var prefSignal = repository.loadUserPreferences(
+                user != null ? user.getUserid() : null,
+                user != null ? user.getUsername() : null);
+        String feedingPlan = aiCustomerService.buildFeedingPlanContext(query, prefSignal);
+        List<AiCsRecommendedProduct> products = aiCustomerService.recommendThreeProducts(query, user, prefSignal);
+        return new Result("success", feedingPlan, products);
+    }
+
+    /**
+     * Dify 外部 HTTP 工具接口：多商品对比测评或「主粮+零食+日用」三件套搭配。
+     */
+    @GetMapping("/dify-tools/compare")
+    public Result difyToolCompare(@RequestParam(defaultValue = "") String query,
+                                  @RequestParam(required = false) Integer userId,
+                                  @RequestHeader(value = "X-Dify-Tool-Token", defaultValue = "") String token) {
+        if (!aiCustomerService.verifyToolToken(token)) {
+            return new Result("error", "Invalid Dify tool token", null);
+        }
+        Usr user = resolveToolUser(userId);
+        var prefSignal = repository.loadUserPreferences(
+                user != null ? user.getUserid() : null,
+                user != null ? user.getUsername() : null);
+        List<AiCsRecommendedProduct> products = aiCustomerService.recommendComboOrCompareProducts(query, user, prefSignal);
+        String summary = aiCustomerService.buildComparisonOrComboContext(query, products);
+        return new Result("success", summary, products);
+    }
+
+    /**
+     * Dify 外部 HTTP 工具接口：诊断买家购物车结构并推荐 3 款互补凑单商品。
+     */
+    @GetMapping("/dify-tools/cart-diagnosis")
+    public Result difyToolCartDiagnosis(@RequestParam(defaultValue = "") String query,
+                                        @RequestParam(required = false) Integer userId,
+                                        @RequestHeader(value = "X-Dify-Tool-Token", defaultValue = "") String token) {
+        if (!aiCustomerService.verifyToolToken(token)) {
+            return new Result("error", "Invalid Dify tool token", null);
+        }
+        Usr user = resolveToolUser(userId);
+        Integer uid = user != null ? user.getUserid() : null;
+        var prefSignal = repository.loadUserPreferences(uid, user != null ? user.getUsername() : null);
+        var cartItems = repository.findUserCartItems(uid);
+        List<AiCsRecommendedProduct> complements = aiCustomerService.recommendCartComplements(query, user, prefSignal, cartItems);
+        String diagnosis = aiCustomerService.buildCartDiagnosisContext(user, cartItems, complements);
+        return new Result("success", diagnosis, complements);
+    }
+
+    private Usr resolveToolUser(Integer userId) {
+        Usr user = null;
+        if (userId != null && userId > 0) {
+            try { user = accountService.current(userId); } catch (Exception ignored) {}
+        }
+        if (user == null) {
+            user = (Usr) session.getAttribute("admin");
+        }
+        return user;
+    }
 }

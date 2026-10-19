@@ -30,9 +30,9 @@
           <div>
             <div class="ai-cs-title-row">
               <strong>AI 智能客服</strong>
-              <span class="ai-cs-badge">Dify</span>
+              <span class="ai-cs-badge">Dify Workflow</span>
             </div>
-            <p class="ai-cs-subtitle">智能导购推荐 · 订单查询与售后</p>
+            <p class="ai-cs-subtitle">偏好导购 · 对比套餐 · 科学喂养 · 购物车诊断 · 订单售后</p>
           </div>
         </div>
         <div class="ai-cs-header-actions">
@@ -98,7 +98,7 @@
           <div class="ai-cs-welcome">
             <div class="ai-cs-welcome-title">🐾 您好{{ user ? '，' + user.username : '' }}！我是猫咪美食坊 AI 客服</div>
             <p class="ai-cs-welcome-desc">
-              我可以结合您的<strong>浏览、收藏、购买偏好与猫咪档案</strong>为您精准推荐 <strong>3 款商品</strong>，也可帮您查询订单状态、取消未发货订单或确认收货。
+              由 <strong>Dify 多分支专家工作流</strong>驱动，支持<strong>偏好选粮推荐、多商品对比与三件套搭配、科学喂食量测算、购物车凑单诊断、订单查询及对话式取消/确认收货</strong>。
             </p>
             <div class="ai-cs-quick-prompts">
               <button
@@ -123,13 +123,15 @@
           >
             <div class="ai-cs-bubble">
               <div class="ai-cs-msg-text" v-html="formatMessage(msg.content)"></div>
-              <div v-if="msg.createdAt" class="ai-cs-msg-time">{{ msg.createdAt }}</div>
+              <div v-if="msg.createdAt || (msg.role === 'assistant' && msg.intent)" class="ai-cs-msg-time">
+                <span v-if="msg.role === 'assistant' && msg.intent">{{ intentLabel(msg.intent) }} · </span>{{ msg.createdAt }}
+              </div>
             </div>
 
             <!-- 导购推荐的 3 款商品卡片 -->
             <div v-if="msg.recommendations && msg.recommendations.length" class="ai-cs-rec-section">
               <div class="ai-cs-rec-header">
-                <span>✨ 为您精选 {{ msg.recommendations.length }} 款偏好匹配好物</span>
+                <span>✨ {{ recommendationSectionTitle(msg.intent, msg.recommendations.length) }}</span>
               </div>
               <div class="ai-cs-rec-list">
                 <article
@@ -267,8 +269,10 @@ export default {
       guestToken: '',
       quickPrompts: [
         '根据我的偏好推荐3款商品',
-        '推荐3款适合幼猫的高蛋白主粮',
-        '推荐3款受欢迎的猫咪零食',
+        '帮我搭配一套主粮+零食+日用三件套',
+        '对比幼猫奶糕粮和烘焙粮哪个好',
+        '我家猫咪一天应该吃多少克猫粮？',
+        '诊断我的购物车并推荐互补好物',
         '查询我的最近订单状态',
         '未发货订单怎么取消或退换货？',
       ],
@@ -285,6 +289,23 @@ export default {
     this.initGuestToken();
   },
   methods: {
+    intentLabel(intent) {
+      const map = {
+        shopping_guide: '专属导购推荐',
+        product_comparison: '对比测评与套餐',
+        feeding_advisor: '科学喂养顾问',
+        cart_advisor: '购物车凑单诊断',
+        order_support: '订单与售后服务',
+        general: '商城全能管家',
+      };
+      return map[intent] || 'AI 智能回复';
+    },
+    recommendationSectionTitle(intent, count) {
+      if (intent === 'product_comparison') return `为您整理 ${count} 款对比/套餐搭配方案`;
+      if (intent === 'feeding_advisor') return `为您搭配 ${count} 款科学喂养与营养调理好物`;
+      if (intent === 'cart_advisor') return `为您推荐 ${count} 款购物车互补凑单商品`;
+      return `为您精选 ${count} 款偏好匹配好物`;
+    },
     initGuestToken() {
       let token = localStorage.getItem(GUEST_TOKEN_KEY);
       if (!token) {

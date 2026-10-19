@@ -152,16 +152,21 @@ docker compose build backend frontend
 
 猫咪档案支持新增、编辑和删除；商品检索与指定猫咪推荐支持 Qwen RAG，并可在未配置密钥时使用本地检索。
 
-### Dify AI 智能客服（导购推荐与订单助手）
+### Dify AI 智能客服（多分支专家工作流）
 
-商城右下角提供悬浮 **AI 客服** 按钮，点击可开启对话或切换查看、继续、删除历史会话（持久化于 `MLcs_conversation` 与 `MLcs_message` 表）。
+商城右下角提供悬浮 **AI 客服** 按钮，点击可开启对话或切换查看、继续、删除历史会话（持久化于 `MLcs_conversation` 与 `MLcs_message` 表）。项目内置 **12 节点多分支 Dify Chatflow DSL 文件** [`docs/dify-kittymarket-chatflow.yml`](docs/dify-kittymarket-chatflow.yml)，可在 Dify 控制台直接通过 **「导入 DSL 文件」** 一键创建完整工作流（包含：`开始` → `商城多维上下文组装 (Template)` → `五维意图智能路由 (Question Classifier)` → `订单操作与售后条件分支 (IF/ELSE)` → `6 大垂类专家 LLM 节点` → `多路专家回复聚合器 (Variable Aggregator)` → `回答`）。
 
-- **偏好导购推荐（固定推荐 3 款商品）**：识别到导购需求时，结合用户的当前提问、RAG 语义/关键词相关度，以及用户的个人偏好信号（浏览记录 `MLproduct_view`、收藏 `MLbuying`、历史购买 `MLorder` 与猫咪档案 `MLcat`），从在售有库存商品中筛选匹配度最高的 **3 款商品**，并在回复气泡下方渲染可交互商品卡片（支持点击查看详情或直接加入购物车）。
-- **订单问题处理**：支持在对话中查询用户订单列表及实时状态、协助取消未发货订单（状态 `1~3`，自动恢复库存）或确认收货（状态 `4 -> 5`），以及解答退换货与发货时效等常见售后问题。
+支持六大核心业务场景：
+- **偏好导购推荐（固定推荐 3 款商品）**：结合用户的当前提问、RAG 语义/关键词相关度，以及用户的个人偏好信号（浏览记录 `MLproduct_view`、收藏 `MLbuying`、历史购买 `MLorder` 与猫咪档案 `MLcat`），从在售有库存商品中筛选匹配度最高的 **3 款商品**，并在回复气泡下方渲染可交互商品卡片（支持点击查看详情或直接加入购物车）。
+- **多商品横向对比与三件套套餐搭配**：支持对同品类多款猫粮/商品进行四维横向测评对比，或跨「猫咪主粮 + 猫咪零食 + 猫咪日用」三大类一键定制一站式三件套组合。
+- **科学喂养与每日食量测算**：基于用户猫咪档案（体重 `kg`、年龄、生理状态：减重/室内/绝育/成猫/妊娠/哺乳/幼猫）按 RER/DER 能量公式测算每日建议干粮克数区间、分餐次数与饮水量，提供七日换粮法及软便/吐毛球/泪痕护理方案。
+- **购物车结构诊断与凑单建议**：实时分析买家当前购物车已选商品的品类结构与总金额，针对缺失品类推荐 3 款互补凑单好物。
+- **订单查询与对话式直接操作**：支持在对话中查询用户订单列表及实时状态、协助取消未发货订单（状态 `1~3`，自动恢复库存）或确认收货（状态 `4 -> 5`），以及解答 24 小时发货与 7 天无忧退换货售后问题。
 
 | 环境变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `DIFY_API_KEY` | 空 | Dify 应用 API Key（`app-...`）；留空或不可达时自动降级使用 Qwen / 本地智能规则回复 |
 | `DIFY_BASE_URL` | `https://api.dify.ai/v1` | Dify Service API 地址（支持 Dify Cloud 或私有化部署地址） |
-| `DIFY_TOOL_TOKEN` | 空 | 可选；Dify 工作流调用后端工具接口 `/ai-cs/dify-tools/recommend` 与 `/ai-cs/dify-tools/orders` 时的校验令牌 |
+| `DIFY_TOOL_TOKEN` | 空 | 可选；Dify 工作流调用后端工具接口 `/ai-cs/dify-tools/recommend`、`/ai-cs/dify-tools/orders`、`/ai-cs/dify-tools/feeding-plan`、`/ai-cs/dify-tools/compare`、`/ai-cs/dify-tools/cart-diagnosis` 时的校验令牌 |
+
 

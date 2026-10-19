@@ -40,6 +40,15 @@ public class AiCustomerServiceRepository {
             Set<Integer> viewedGoods
     ) {}
 
+    public record CartItemSummary(
+            int goodid,
+            String goodname,
+            String kind,
+            String subkind,
+            double price,
+            int quantity
+    ) {}
+
     public AiCustomerServiceRepository(JdbcTemplate jdbc, ObjectMapper objectMapper) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
@@ -298,6 +307,26 @@ public class AiCustomerServiceRepository {
         }
 
         return new PreferenceSignal(cats, productWeights, kindWeights, subkindWeights, likedGoods, purchasedGoods, viewedGoods);
+    }
+
+    public List<CartItemSummary> findUserCartItems(Integer userId) {
+        if (userId == null || userId < 1) return List.of();
+        String sql = """
+                SELECT b.goodid, b.number, g.goodname, g.kind, g.subkind, g.price
+                FROM MLbuying b
+                JOIN MLgood g ON g.goodid = b.goodid
+                WHERE b.buyer = ? AND b.number > 0 AND g.state = 0
+                ORDER BY b.buyingid DESC
+                LIMIT 20
+                """;
+        return jdbc.query(sql, (rs, rowNum) -> new CartItemSummary(
+                rs.getInt("goodid"),
+                safeTrim(rs.getString("goodname")),
+                safeTrim(rs.getString("kind")),
+                safeTrim(rs.getString("subkind")),
+                rs.getDouble("price"),
+                rs.getInt("number")
+        ), userId);
     }
 
     public List<AiCsOrderSummary> findUserOrders(String buyername) {

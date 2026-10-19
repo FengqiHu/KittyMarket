@@ -120,6 +120,58 @@ class AiCustomerServiceTests {
         assertEquals(-1, resp.assistantMessage().orders().get(0).orderstate());
     }
 
+    @Test
+    void supportsMultiBranchComboFeedingAndCartAdvisors() {
+        AiCustomerServiceRepository repo = mock(AiCustomerServiceRepository.class);
+        GoodListRepository goodListRepo = mock(GoodListRepository.class);
+        RecommendationRepository recRepo = mock(RecommendationRepository.class);
+        CatalogRagService ragService = mock(CatalogRagService.class);
+        OrderService orderService = mock(OrderService.class);
+
+        Good g1 = product(1, "鲜鸡肉幼猫奶糕粮", "猫咪主粮", "幼猫粮", 68.0, "高蛋白乳铁蛋白幼猫配方", "布偶猫,通用", "0-2", "0.5-6");
+        Good g2 = product(2, "冻干三文鱼猫零食", "猫咪零食", "冻干", 39.0, "纯肉冻干美毛护肤", "通用", "0-15", "0.5-15");
+        Good g3 = product(3, "天然植物豆腐猫砂", "猫咪日用", "猫砂", 29.0, "快速结团低尘除臭", "通用", "0-20", "0-20");
+
+        when(goodListRepo.shownow()).thenReturn(List.of(g1, g2, g3));
+        when(ragService.search(anyString(), anyString(), anyInt(), anyInt()))
+                .thenReturn(new CatalogSearchResult(List.of(g1, g2, g3), "", "keyword", List.of(1, 2, 3), 3, 1, 26));
+        when(recRepo.page(anyString(), anyInt(), anyInt(), any()))
+                .thenReturn(new GoodPage(List.of(g1, g2, g3), 3));
+
+        Cat cat = new Cat();
+        cat.setCatid(10);
+        cat.setCatname("糯米");
+        cat.setCatkind("英短");
+        cat.setCatage(2);
+        cat.setCatweight(4.0);
+        cat.setCatstate(3); // 已绝育
+
+        PreferenceSignal pref = new PreferenceSignal(
+                List.of(cat), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(), Set.of());
+
+        Usr buyer = new Usr();
+        buyer.setUserid(1);
+        buyer.setUsername("111");
+
+        AiCustomerService service = new AiCustomerService(
+                repo, goodListRepo, recRepo, ragService, orderService, new ObjectMapper(),
+                "", "https://api.dify.ai/v1", "", "", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-plus");
+
+        assertEquals("product_comparison", service.detectIntent("帮我搭配一套主粮+零食+日用三件套"));
+        assertEquals("feeding_advisor", service.detectIntent("我家猫咪一天应该吃多少克猫粮？"));
+        assertEquals("cart_advisor", service.detectIntent("诊断我的购物车并推荐互补好物"));
+
+        List<AiCsRecommendedProduct> combo = service.recommendComboOrCompareProducts("帮我搭配一套主粮+零食+日用三件套", buyer, pref);
+        assertEquals(3, combo.size());
+        assertEquals(Set.of("猫咪主粮", "猫咪零食", "猫咪日用"),
+                Set.of(combo.get(0).kind(), combo.get(1).kind(), combo.get(2).kind()));
+
+        String feedingPlan = service.buildFeedingPlanContext("一天吃多少克", pref);
+        assertTrue(feedingPlan.contains("糯米"));
+        assertTrue(feedingPlan.contains("g ~ "));
+        assertTrue(feedingPlan.contains("200ml"));
+    }
+
     private static Good product(int id, String name, String kind, String subkind, double price,
                                 String desc, String catkind, String catage, String catweight) {
         Good g = new Good();
