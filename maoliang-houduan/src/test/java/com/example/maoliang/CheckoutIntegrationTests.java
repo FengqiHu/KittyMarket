@@ -187,9 +187,10 @@ class CheckoutIntegrationTests {
         mvc.perform(post("/order/checkout-cart").session(session).contentType("application/json")
                 .content("{\"items\":[{\"goodid\":" + second + ",\"number\":3},{\"goodid\":" + goodId
                         + ",\"number\":2}],\"buyerName\":\"测试收货人\",\"telephone\":\"12345678901\",\"address\":\"测试地址\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].recipientname").value("测试收货人"))
-                .andExpect(jsonPath("$.data[1].recipientname").value("测试收货人"));
+                .andExpect(jsonPath("$.data[0].number").value(5))
+                .andExpect(jsonPath("$.data[0].items.length()").value(2));
         assertEquals(3, stock());
         assertEquals(2, stock(second));
         assertEquals(5, stock(unselected));
@@ -198,7 +199,9 @@ class CheckoutIntegrationTests {
         assertEquals(1, cartQuantity(unselected));
         assertEquals(1, jdbc.queryForObject("SELECT islike FROM MLbuying WHERE goodid = ? AND buyer = ?",
                 Integer.class, goodId, buyer.getUserid()));
-        assertEquals(2, service.showbuyerorderinfo(buyer.getUsername()).size());
+        List<Order> history = service.showbuyerorderinfo(buyer.getUsername());
+        assertEquals(1, history.size());
+        assertEquals(2, history.get(0).getItems().size());
     }
 
     @Test
@@ -215,11 +218,7 @@ class CheckoutIntegrationTests {
         int second = extraGood();
         addCart(goodId, 2);
         addCart(second, 1);
-        org.mockito.Mockito.doAnswer(invocation -> {
-            Order order = invocation.getArgument(0);
-            if (order.getGoodid() == second) throw new DataIntegrityViolationException("test second insert failure");
-            return invocation.callRealMethod();
-        }).when(repository).create(any(Order.class));
+        doThrow(new DataIntegrityViolationException("test merged order insert failure")).when(repository).create(any(Order.class));
         assertThrows(DataIntegrityViolationException.class, () -> service.createCartOrders(batch(second, 1), buyer));
         assertBatchUntouched(second, 1);
     }
@@ -277,7 +276,7 @@ class CheckoutIntegrationTests {
             assertNotEquals(first.get(10, TimeUnit.SECONDS), other.get(10, TimeUnit.SECONDS));
             assertEquals(3, stock());
             assertEquals(4, stock(second));
-            assertEquals(2, service.showbuyerorderinfo(buyer.getUsername()).size());
+            assertEquals(1, service.showbuyerorderinfo(buyer.getUsername()).size());
         } finally { executor.shutdownNow(); }
     }
 

@@ -1,8 +1,12 @@
 package com.example.maoliang.Entity;
+import com.example.maoliang.dto.OrderItem;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Transient;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 public class Order {
@@ -18,6 +22,8 @@ public class Order {
 	private int number;
 	private int orderstate;
 	private int owner;
+	@Transient
+	private List<OrderItem> items = List.of();
 
 	public int getNumber() {
 		return number;
@@ -73,5 +79,21 @@ public class Order {
 	public void setOrderstate(int orderstate) {
 		this.orderstate = orderstate;
 	}
-	
+	public List<OrderItem> getItems() {
+		return items;
+	}
+	public void setItems(List<OrderItem> items) {
+		this.items = items == null ? List.of() : List.copyOf(items);
+	}
+	public String getGoodIdsSummary() {
+		if (items == null || items.isEmpty()) return String.valueOf(goodid);
+		return items.stream().map(item -> String.valueOf(item.goodid())).collect(Collectors.joining(", "));
+	}
+	public String getGoodsSummary() {
+		if (items == null || items.isEmpty()) return "商品#" + goodid + " ×" + number;
+		return items.stream()
+				.map(item -> (item.goodname() == null || item.goodname().isBlank() ? "商品#" + item.goodid() : item.goodname().trim()) + " ×" + item.number())
+				.collect(Collectors.joining("、"));
+	}
 }
+

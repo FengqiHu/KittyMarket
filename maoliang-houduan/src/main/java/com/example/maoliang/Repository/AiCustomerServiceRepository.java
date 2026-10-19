@@ -49,6 +49,27 @@ public class AiCustomerServiceRepository {
     public void ensureTables() {
         try {
             jdbc.execute("""
+                    CREATE TABLE IF NOT EXISTS MLorder_item (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        orderid INTEGER NOT NULL,
+                        goodid INTEGER NOT NULL,
+                        goodname VARCHAR(255) NOT NULL,
+                        price DOUBLE NOT NULL,
+                        number INTEGER NOT NULL,
+                        KEY idx_mlorder_item_order (orderid),
+                        KEY idx_mlorder_item_good (goodid),
+                        FOREIGN KEY (orderid) REFERENCES MLorder (orderid) ON DELETE CASCADE,
+                        FOREIGN KEY (goodid) REFERENCES MLgood (goodid) ON DELETE CASCADE
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    """);
+            jdbc.execute("""
+                    INSERT INTO MLorder_item (orderid, goodid, goodname, price, number)
+                    SELECT o.orderid, o.goodid, COALESCE(g.goodname, CONCAT('商品#', o.goodid)), COALESCE(g.price, 0), o.number
+                    FROM MLorder o
+                    LEFT JOIN MLgood g ON g.goodid = o.goodid
+                    WHERE NOT EXISTS (SELECT 1 FROM MLorder_item oi WHERE oi.orderid = o.orderid)
+                    """);
+            jdbc.execute("""
                     CREATE TABLE IF NOT EXISTS MLcs_conversation (
                         id BIGINT PRIMARY KEY AUTO_INCREMENT,
                         user_key VARCHAR(64) NOT NULL,
@@ -258,13 +279,16 @@ public class AiCustomerServiceRepository {
 
         if (username != null && !username.isBlank()) {
             jdbc.query("""
-                    SELECT o.goodid, LEAST(SUM(o.number), 5) AS qty, g.kind, g.subkind
+                    SELECT COALESCE(oi.goodid, o.goodid) AS gid,
+                           LEAST(SUM(COALESCE(oi.number, o.number)), 5) AS qty,
+                           g.kind, g.subkind
                     FROM MLorder o
-                    JOIN MLgood g ON g.goodid = o.goodid
+                    LEFT JOIN MLorder_item oi ON oi.orderid = o.orderid
+                    JOIN MLgood g ON g.goodid = COALESCE(oi.goodid, o.goodid)
                     WHERE o.buyername = ? AND o.orderstate > 0
-                    GROUP BY o.goodid, g.kind, g.subkind
+                    GROUP BY COALESCE(oi.goodid, o.goodid), g.kind, g.subkind
                     """, rs -> {
-                int gid = rs.getInt("goodid");
+                int gid = rs.getInt("gid");
                 double w = rs.getDouble("qty") * 5.0;
                 purchasedGoods.add(gid);
                 productWeights.merge(gid, w, Double::sum);
@@ -288,16 +312,42 @@ public class AiCustomerServiceRepository {
                 LIMIT 20
                 """;
         return jdbc.query(sql, (rs, rowNum) -> {
+            int orderId = rs.getInt("orderid");
             int state = rs.getInt("orderstate");
             String recipient = safeTrim(rs.getString("recipientname"));
             if (recipient.isEmpty()) recipient = safeTrim(rs.getString("buyername"));
+
+            List<Map<String, Object>> itemRows = jdbc.queryForList(
+                    "SELECT goodid, goodname, price, number FROM MLorder_item WHERE orderid = ? ORDER BY id ASC",
+                    orderId);
+
+            String summaryName;
+            double unitOrAvgPrice;
+            int totalQty = rs.getInt("number");
+            if (itemRows.size() > 1) {
+                summaryName = itemRows.stream()
+                        .map(r -> String.valueOf(r.get("goodname")).trim() + " ×" + r.get("number"))
+                        .reduce((a, b) -> a + "、" + b)
+                        .orElse("合并订单");
+                double totalAmount = itemRows.stream()
+                        .mapToDouble(r -> ((Number) r.get("price")).doubleValue() * ((Number) r.get("number")).intValue())
+                        .sum();
+                unitOrAvgPrice = totalQty > 0 ? totalAmount / totalQty : totalAmount;
+            } else if (itemRows.size() == 1) {
+                summaryName = String.valueOf(itemRows.get(0).get("goodname")).trim();
+                unitOrAvgPrice = ((Number) itemRows.get(0).get("price")).doubleValue();
+            } else {
+                summaryName = Optional.ofNullable(rs.getString("goodname")).map(String::trim).orElse("商品#" + rs.getInt("goodid"));
+                unitOrAvgPrice = rs.getDouble("price");
+            }
+
             return new AiCsOrderSummary(
-                    rs.getInt("orderid"),
+                    orderId,
                     rs.getInt("goodid"),
-                    Optional.ofNullable(rs.getString("goodname")).map(String::trim).orElse("商品#" + rs.getInt("goodid")),
+                    summaryName,
                     Optional.ofNullable(rs.getString("picture")).map(String::trim).orElse(""),
-                    rs.getDouble("price"),
-                    rs.getInt("number"),
+                    unitOrAvgPrice,
+                    totalQty,
                     state,
                     orderStatusText(state),
                     recipient,

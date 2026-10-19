@@ -12,7 +12,7 @@
 <el-table-column label="电话" min-width="120"><template #default="{row: order}">{{ order.telephone }}</template></el-table-column>
 <el-table-column label="收货人" min-width="120"><template #default="{row: order}">{{ order.recipientname || order.buyername }}</template></el-table-column>
 <el-table-column label="数量" min-width="90"><template #default="{row: order}">{{ order.number }}</template></el-table-column>
-<el-table-column label="商品ID" min-width="120"><template #default="{row: order}">{{ order.goodid }}</template></el-table-column>
+<el-table-column label="商品明细 (ID)" min-width="180"><template #default="{row: order}">{{ order.goodsSummary ? `${order.goodsSummary} (ID: ${order.goodIdsSummary || order.goodid})` : order.goodid }}</template></el-table-column>
 <el-table-column label="订单状态" min-width="120"><template #default="{row: order}">{{ getOrderStatus(order.orderstate) }}</template></el-table-column></el-table>
         <div class="pagination">
           <button @click="goToPrevPage" :disabled="isPrevDisabled">上一页</button>

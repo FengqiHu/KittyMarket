@@ -23,7 +23,7 @@
           <td>{{ order.telephone }}</td>
           <td>{{ order.recipientname || order.buyername }}</td>
           <td>{{ order.number }}</td>
-          <td>{{ order.goodid }}</td>
+          <td>{{ order.goodsSummary ? `${order.goodsSummary} (ID: ${order.goodIdsSummary || order.goodid})` : order.goodid }}</td>
           <td>
             <button v-if="order.orderstate === 1"
                     @click="confirmOrder(order.orderid)"

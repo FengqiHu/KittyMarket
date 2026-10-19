@@ -1,14 +1,13 @@
 package com.example.maoliang.Repository;
 
 import com.example.maoliang.Entity.Order;
-import com.example.maoliang.Entity.Usr;
+import com.example.maoliang.dto.OrderItem;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
@@ -44,15 +43,64 @@ public class OrderRepository {
             statement.setInt(7, order.getOwner());
             return statement;
         }, key);
-        order.setOrderid(key.getKey().intValue());
+        int orderId = key.getKey().intValue();
+        order.setOrderid(orderId);
         order.setOrderstate(1);
+
+        List<OrderItem> items = order.getItems();
+        if (items != null && !items.isEmpty()) {
+            for (OrderItem item : items) {
+                jdbcTemplate.update(
+                        "INSERT INTO MLorder_item(orderid, goodid, goodname, price, number) VALUES (?, ?, ?, ?, ?)",
+                        orderId, item.goodid(), item.goodname(), item.price(), item.number());
+            }
+        } else {
+            jdbcTemplate.update("""
+                    INSERT INTO MLorder_item(orderid, goodid, goodname, price, number)
+                    SELECT ?, ?, COALESCE((SELECT goodname FROM MLgood WHERE goodid = ?), CONCAT('商品#', ?)),
+                           COALESCE((SELECT price FROM MLgood WHERE goodid = ?), 0), ?
+                    """, orderId, order.getGoodid(), order.getGoodid(), order.getGoodid(), order.getGoodid(), order.getNumber());
+        }
         return order;
+    }
+
+    public List<OrderItem> findItemsByOrderId(int orderid) {
+        List<OrderItem> items = jdbcTemplate.query("""
+                SELECT oi.goodid, oi.goodname, oi.price, oi.number, COALESCE(g.picture, '') AS picture
+                FROM MLorder_item oi
+                LEFT JOIN MLgood g ON g.goodid = oi.goodid
+                WHERE oi.orderid = ?
+                ORDER BY oi.id ASC
+                """, (rs, rowNum) -> new OrderItem(
+                rs.getInt("goodid"),
+                rs.getString("goodname"),
+                rs.getDouble("price"),
+                rs.getInt("number"),
+                rs.getString("picture")
+        ), orderid);
+        if (!items.isEmpty()) return items;
+        return jdbcTemplate.query("""
+                SELECT o.goodid, COALESCE(g.goodname, CONCAT('商品#', o.goodid)) AS goodname,
+                       COALESCE(g.price, 0) AS price, o.number, COALESCE(g.picture, '') AS picture
+                FROM MLorder o
+                LEFT JOIN MLgood g ON g.goodid = o.goodid
+                WHERE o.orderid = ?
+                """, (rs, rowNum) -> new OrderItem(
+                rs.getInt("goodid"),
+                rs.getString("goodname"),
+                rs.getDouble("price"),
+                rs.getInt("number"),
+                rs.getString("picture")
+        ), orderid);
     }
 
     public Order lockOrder(int orderid) {
         List<Order> orders = jdbcTemplate.query("SELECT * FROM MLorder WHERE orderid = ? FOR UPDATE",
                 org.springframework.jdbc.core.BeanPropertyRowMapper.newInstance(Order.class), orderid);
-        return orders.isEmpty() ? null : orders.get(0);
+        if (orders.isEmpty()) return null;
+        Order order = orders.get(0);
+        order.setItems(findItemsByOrderId(orderid));
+        return order;
     }
 
     public void cancel(int orderid) {
@@ -65,8 +113,8 @@ public class OrderRepository {
     }
 
     public void deletegood(int goodid) {
-        String sql = "DELETE FROM MLorder WHERE goodid = ?";
-        jdbcTemplate.update(sql, goodid);
+        jdbcTemplate.update("DELETE FROM MLorder_item WHERE goodid = ?", goodid);
+        jdbcTemplate.update("DELETE FROM MLorder WHERE goodid = ?", goodid);
     }
 
     public int searchid(int orderid) {
@@ -74,7 +122,6 @@ public class OrderRepository {
         try {
             return jdbcTemplate.queryForObject(sql, Integer.class, orderid);
         } catch (EmptyResultDataAccessException e) {
-            // 查询无结果时返回-1
             return -1;
         }
     }
@@ -89,7 +136,6 @@ public class OrderRepository {
         try {
              return jdbcTemplate.queryForObject(sql, Integer.class, orderid);
         } catch (EmptyResultDataAccessException e) {
-            // 查询无结果时返回-1
             return -1;
         }
     }
@@ -97,7 +143,7 @@ public class OrderRepository {
     public Order getOrderById(int orderId) {
         String sql = "SELECT * FROM MLorder WHERE orderid = ?";
         try{
-            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+            Order order = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
                 Order resultOrder = new Order();
                 resultOrder.setOrderid(rs.getInt("orderid"));
                 resultOrder.setAddress(rs.getString("address"));
@@ -110,9 +156,13 @@ public class OrderRepository {
                 resultOrder.setOwner(rs.getInt("owner"));
                 return resultOrder;
             }, orderId);
+            if (order != null) {
+                order.setItems(findItemsByOrderId(orderId));
+            }
+            return order;
         } catch (EmptyResultDataAccessException e) {
-            // 查询无结果时返回null
             return null;
         }
     }
 }
+

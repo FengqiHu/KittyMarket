@@ -7,6 +7,7 @@ import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Repository.GoodRepository;
 import com.example.maoliang.dto.CreateOrderData;
 import com.example.maoliang.dto.CreateCartOrderData;
+import com.example.maoliang.dto.OrderItem;
 import com.example.maoliang.Repository.OrderListRepository;
 import com.example.maoliang.Repository.OrderRepository;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class OrderService {
     private AccountService accounts;
 
     @Transactional
-    public List<Order> createCartOrders(CreateCartOrderData request, Usr buyer) {
+    public Order createCartOrder(CreateCartOrderData request, Usr buyer) {
         if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
         if (request == null || request.items() == null || request.items().isEmpty()) {
             throw new IllegalArgumentException("请至少选择一件购物车商品");
@@ -55,15 +56,62 @@ public class OrderService {
             }
             if (!ids.add(item.goodid())) throw new IllegalArgumentException("同一商品不能重复提交");
         }
+        buyer = accounts.lockUser(buyer.getUserid());
+        String recipient = requireText(request.buyerName(), 10, "收货人");
+        String address = requireText(request.address(), 99, "收货地址");
+        String telephone = request.telephone() == null ? "" : request.telephone().trim();
+        if (!telephone.matches("[0-9]{11}")) throw new IllegalArgumentException("联系电话需要是 11 位数字");
+
         // Use a stable lock order even when two carts submit their items in different orders.
         var items = new ArrayList<>(request.items());
         items.sort(Comparator.comparing(CreateCartOrderData.Item::goodid));
-        List<Order> orders = new ArrayList<>();
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        int totalNumber = 0;
+        int primaryOwner = 0;
+
         for (var item : items) {
-            orders.add(createOrder(new CreateOrderData(item.goodid(), item.number(), request.buyerName(),
-                    request.telephone(), request.address(), true), buyer));
+            Good good = goodRepository.lockGood(item.goodid());
+            if (good == null || good.getState() != 0) throw new IllegalArgumentException("商品已下架或不存在");
+            if (goodRepository.lockCartQuantity(good.getGoodid(), buyer.getUserid()) < 1) {
+                throw new IllegalArgumentException("商品已不在购物车中，请返回购物车重新选择");
+            }
+            if (!goodRepository.reserveStock(good.getGoodid(), item.number())) {
+                throw new IllegalArgumentException("库存不足，请减少购买数量");
+            }
+            goodRepository.consumeCart(good.getGoodid(), buyer.getUserid(), item.number());
+            if (primaryOwner == 0) primaryOwner = good.getOwner();
+            totalNumber += item.number();
+            orderItems.add(new OrderItem(
+                    good.getGoodid(),
+                    good.getGoodname() == null ? "" : good.getGoodname().trim(),
+                    good.getPrice(),
+                    item.number(),
+                    good.getPicture() == null ? "" : good.getPicture().trim()
+            ));
         }
-        return orders;
+
+        Order order = new Order();
+        order.setBuyername(buyer.getUsername().trim());
+        order.setRecipientname(recipient);
+        order.setAddress(address);
+        order.setTelephone(telephone);
+        order.setGoodid(orderItems.get(0).goodid());
+        order.setNumber(totalNumber);
+        order.setOwner(primaryOwner);
+        order.setItems(orderItems);
+        orderRepository.create(order);
+
+        for (OrderItem oi : orderItems) {
+            catalogIndexOutbox.enqueue(oi.goodid(), "STOCK_CHANGED");
+        }
+        hotGoodsCache.invalidateAfterCommit();
+        return order;
+    }
+
+    @Transactional
+    public List<Order> createCartOrders(CreateCartOrderData request, Usr buyer) {
+        return List.of(createCartOrder(request, buyer));
     }
 
     @Transactional
@@ -97,6 +145,13 @@ public class OrderService {
         order.setGoodid(good.getGoodid());
         order.setNumber(request.number());
         order.setOwner(good.getOwner());
+        order.setItems(List.of(new OrderItem(
+                good.getGoodid(),
+                good.getGoodname() == null ? "" : good.getGoodname().trim(),
+                good.getPrice(),
+                request.number(),
+                good.getPicture() == null ? "" : good.getPicture().trim()
+        )));
         orderRepository.create(order);
         if (Boolean.TRUE.equals(request.fromCart())) {
             goodRepository.consumeCart(good.getGoodid(), buyer.getUserid(), request.number());
@@ -135,10 +190,20 @@ public class OrderService {
         boolean seller = order.getOwner() == user.getUserid();
         if (!buyer && !seller) return false;
         orderRepository.cancel(orderid);
-        if (!goodRepository.updateGoodNumber(order.getNumber(), order.getGoodid())) {
-            throw new IllegalStateException("取消订单时恢复库存失败");
+        List<OrderItem> items = order.getItems();
+        if (items != null && !items.isEmpty()) {
+            for (OrderItem item : items) {
+                if (!goodRepository.updateGoodNumber(item.number(), item.goodid())) {
+                    throw new IllegalStateException("取消订单时恢复库存失败");
+                }
+                catalogIndexOutbox.enqueue(item.goodid(), "STOCK_CHANGED");
+            }
+        } else {
+            if (!goodRepository.updateGoodNumber(order.getNumber(), order.getGoodid())) {
+                throw new IllegalStateException("取消订单时恢复库存失败");
+            }
+            catalogIndexOutbox.enqueue(order.getGoodid(), "STOCK_CHANGED");
         }
-        catalogIndexOutbox.enqueue(order.getGoodid(), "STOCK_CHANGED");
         hotGoodsCache.invalidateAfterCommit();
         return true;
     }

@@ -116,15 +116,13 @@ export default {
           ...this.purchase, telephone: this.purchase.telephone.trim(),
           ...(this.fromCart ? { items } : { ...items[0], fromCart: false }),
         });
-        const orders = this.fromCart ? data.data : [data.data];
-        if (data.page === '/error' || !Array.isArray(orders) || orders.length !== items.length || orders.some(order => !order?.orderid)) {
+        const orders = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : []);
+        if (data.page === '/error' || !orders.length || orders.some(order => !order?.orderid)) {
           this.error = data.msg || '下单失败，请重试'; return;
         }
         this.submitted = true;
-        ElMessage.success(this.fromCart ? '所选商品已全部结算' : '订单 #' + orders[0].orderid + ' 已提交');
-        this.$router.push({ path: '/buyer-history', query: this.fromCart
-          ? { orderids: orders.map(order => order.orderid).join(',') }
-          : { orderid: orders[0].orderid } });
+        ElMessage.success(this.fromCart ? '合并订单 #' + orders[0].orderid + ' 已提交' : '订单 #' + orders[0].orderid + ' 已提交');
+        this.$router.push({ path: '/buyer-history', query: { orderid: orders[0].orderid } });
       } catch {
         this.error = '提交失败，请检查“我的订单”确认是否已创建订单。';
       } finally { this.submitting = false; }

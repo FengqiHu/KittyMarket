@@ -19,8 +19,8 @@
 <el-table-column label="地址" min-width="120"><template #default="{row: order}">{{ order.address }}</template></el-table-column>
 <el-table-column label="电话" min-width="120"><template #default="{row: order}">{{ order.telephone }}</template></el-table-column>
 <el-table-column label="收货人" min-width="120"><template #default="{row: order}">{{ order.recipientname || order.buyername }}</template></el-table-column>
-<el-table-column label="数量" min-width="90"><template #default="{row: order}">{{ order.number }}</template></el-table-column>
-<el-table-column label="商品ID" min-width="120"><template #default="{row: order}">{{ order.goodid }}</template></el-table-column>
+<el-table-column label="总数量" min-width="90"><template #default="{row: order}">{{ order.number }}</template></el-table-column>
+<el-table-column label="商品明细 (ID)" min-width="180"><template #default="{row: order}">{{ order.goodsSummary ? `${order.goodsSummary} (ID: ${order.goodIdsSummary || order.goodid})` : order.goodid }}</template></el-table-column>
 <el-table-column label="操作" min-width="170"><template #default="{row: order}">
               <button v-if="order.orderstate === 4" class="green-btn"
                       @click="handleOrderAction(order.orderid, 'confirmCompletion')"

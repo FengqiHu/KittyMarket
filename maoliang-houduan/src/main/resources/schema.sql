@@ -129,6 +129,25 @@ PREPARE checkout_migration_stmt FROM @checkout_migration;
 EXECUTE checkout_migration_stmt;
 DEALLOCATE PREPARE checkout_migration_stmt;
 
+CREATE TABLE IF NOT EXISTS MLorder_item (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    orderid INTEGER NOT NULL,
+    goodid INTEGER NOT NULL,
+    goodname VARCHAR(255) NOT NULL,
+    price DOUBLE NOT NULL,
+    number INTEGER NOT NULL,
+    KEY idx_mlorder_item_order (orderid),
+    KEY idx_mlorder_item_good (goodid),
+    FOREIGN KEY (orderid) REFERENCES MLorder (orderid) ON DELETE CASCADE,
+    FOREIGN KEY (goodid) REFERENCES MLgood (goodid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO MLorder_item (orderid, goodid, goodname, price, number)
+SELECT o.orderid, o.goodid, COALESCE(g.goodname, CONCAT('商品#', o.goodid)), COALESCE(g.price, 0), o.number
+FROM MLorder o
+LEFT JOIN MLgood g ON g.goodid = o.goodid
+WHERE NOT EXISTS (SELECT 1 FROM MLorder_item oi WHERE oi.orderid = o.orderid);
+
 CREATE TABLE IF NOT EXISTS MLprice  (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     goodid int NOT NULL,
