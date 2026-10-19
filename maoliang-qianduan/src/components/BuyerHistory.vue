@@ -1,6 +1,6 @@
 <template>
 <section class="legacy-page">
-  <el-alert v-if="$route.query.orderid && orders.some(order => order.orderid === Number($route.query.orderid) && order.orderstate === 1)" :title="'订单 #' + $route.query.orderid + ' 已创建，等待商家确认。'" type="success" show-icon class="form-alert" />
+  <el-alert v-if="createdOrderMessage" :title="createdOrderMessage" type="success" show-icon class="form-alert" />
 
   <div >
   <div v-if="isLoggedIn">
@@ -203,6 +203,14 @@ export default {
   },
   computed: {
     ...mapGetters(['isSeller', 'isBuyer']),
+    createdOrderMessage() {
+      const ids = String(this.$route.query.orderids || this.$route.query.orderid || '').split(',').map(Number);
+      const created = this.orders.filter(order => ids.includes(order.orderid) && order.orderstate === 1);
+      if (!created.length) return '';
+      return this.$route.query.orderids
+        ? '已合并提交 ' + created.length + ' 笔订单，等待商家确认。'
+        : '订单 #' + created[0].orderid + ' 已创建，等待商家确认。';
+    },
     username() {
       // 从 Vuex store 获取用户名
       return this.$store.state.admin ? this.$store.state.admin.username : '未登录';

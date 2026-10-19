@@ -5,6 +5,7 @@ import com.example.maoliang.Controller.utils.Result;
 import com.example.maoliang.Service.OrderService;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.dto.CreateOrderData;
+import com.example.maoliang.dto.CreateCartOrderData;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,16 @@ public class OrderController {
         try {
             Usr buyer = (Usr) session.getAttribute("admin");
             return new Result(SUCCESS_PAGE, "下单成功", orderService.createOrder(request, buyer));
+        } catch (IllegalArgumentException exception) {
+            return new Result(ERROR_PAGE, exception.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/checkout-cart")
+    public Result checkoutCart(@RequestBody CreateCartOrderData request) {
+        try {
+            Usr buyer = (Usr) session.getAttribute("admin");
+            return new Result(SUCCESS_PAGE, "合并结算成功", orderService.createCartOrders(request, buyer));
         } catch (IllegalArgumentException exception) {
             return new Result(ERROR_PAGE, exception.getMessage(), null);
         }

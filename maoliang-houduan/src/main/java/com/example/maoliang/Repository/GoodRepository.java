@@ -99,7 +99,14 @@ public class GoodRepository{
     }
 
     public List<Map<String, Object>> showBuyerCart(int userId) {
-        String sql = "SELECT g.GOODID as id , g.GOODNAME as name,g.PRICE as price,g.DESCRIPTION as description,g.KIND as kind,g.PICTURE as mediaFiles,g.NUMBER as maxquantity FROM MLbuying b left join MLGOOD g on b.GOODID=g.GOODID  WHERE b.buyer = ? AND b.number > 0";
+        String sql = """
+                SELECT g.goodid AS id, g.goodname AS name, g.price, g.description,
+                       g.kind, g.picture AS mediaFiles, g.number AS maxquantity,
+                       b.number AS quantity, g.state
+                FROM MLbuying b JOIN MLgood g ON b.goodid = g.goodid
+                WHERE b.buyer = ? AND b.number > 0
+                ORDER BY b.buyingid
+                """;
         return jdbcTemplate.queryForList(sql, userId);
     }
     public List<Map<String,Object>> showLike(int userId, int islike) {
@@ -114,8 +121,11 @@ public class GoodRepository{
 
 
     public void modifybuynumber(int buyingid, int number) {
-        String sql = (number == -1) ? "UPDATE MLbuying SET number = number + 1 WHERE buyingid = ?" : "UPDATE MLbuying SET number = ? WHERE buyingid = ?";
-        jdbcTemplate.update(sql, (number == -1) ? buyingid : number, buyingid);
+        if (number == -1) {
+            jdbcTemplate.update("UPDATE MLbuying SET number = number + 1 WHERE buyingid = ?", buyingid);
+        } else {
+            jdbcTemplate.update("UPDATE MLbuying SET number = ? WHERE buyingid = ?", number, buyingid);
+        }
     }
 
 
@@ -166,6 +176,13 @@ public class GoodRepository{
         // Cart quantities and favourites share a row; retain the favourite after checkout.
         jdbcTemplate.update("UPDATE MLbuying SET number = GREATEST(0, number - ?) " +
                 "WHERE goodid = ? AND buyer = ?", quantity, goodid, buyer);
+    }
+
+    public int lockCartQuantity(int goodid, int buyer) {
+        List<Integer> quantities = jdbcTemplate.queryForList(
+                "SELECT number FROM MLbuying WHERE goodid = ? AND buyer = ? FOR UPDATE",
+                Integer.class, goodid, buyer);
+        return quantities.stream().mapToInt(Integer::intValue).sum();
     }
 
 

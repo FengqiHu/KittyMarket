@@ -6,6 +6,7 @@ import com.example.maoliang.Entity.Good;
 import com.example.maoliang.Entity.Usr;
 import com.example.maoliang.Repository.GoodRepository;
 import com.example.maoliang.dto.CreateOrderData;
+import com.example.maoliang.dto.CreateCartOrderData;
 import com.example.maoliang.Repository.OrderListRepository;
 import com.example.maoliang.Repository.OrderRepository;
 import org.slf4j.Logger;
@@ -15,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 
 @Service
 public class OrderService {
@@ -36,6 +40,31 @@ public class OrderService {
     private CatalogIndexOutbox catalogIndexOutbox;
 
     @Transactional
+    public List<Order> createCartOrders(CreateCartOrderData request, Usr buyer) {
+        if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
+        if (request == null || request.items() == null || request.items().isEmpty()) {
+            throw new IllegalArgumentException("请至少选择一件购物车商品");
+        }
+        var ids = new HashSet<Integer>();
+        for (var item : request.items()) {
+            if (item == null || item.goodid() == null || item.goodid() < 1
+                    || item.number() == null || item.number() < 1) {
+                throw new IllegalArgumentException("请选择有效商品和购买数量");
+            }
+            if (!ids.add(item.goodid())) throw new IllegalArgumentException("同一商品不能重复提交");
+        }
+        // Use a stable lock order even when two carts submit their items in different orders.
+        var items = new ArrayList<>(request.items());
+        items.sort(Comparator.comparing(CreateCartOrderData.Item::goodid));
+        List<Order> orders = new ArrayList<>();
+        for (var item : items) {
+            orders.add(createOrder(new CreateOrderData(item.goodid(), item.number(), request.buyerName(),
+                    request.telephone(), request.address(), true), buyer));
+        }
+        return orders;
+    }
+
+    @Transactional
     public Order createOrder(CreateOrderData request, Usr buyer) {
         if (buyer == null) throw new IllegalArgumentException("请先登录后再下单");
         if (request.goodid() == null || request.goodid() < 1 || request.number() == null || request.number() < 1) {
@@ -48,6 +77,10 @@ public class OrderService {
 
         Good good = goodRepository.lockGood(request.goodid());
         if (good == null || good.getState() != 0) throw new IllegalArgumentException("商品已下架或不存在");
+        if (Boolean.TRUE.equals(request.fromCart())
+                && goodRepository.lockCartQuantity(good.getGoodid(), buyer.getUserid()) < 1) {
+            throw new IllegalArgumentException("商品已不在购物车中，请返回购物车重新选择");
+        }
         if (!goodRepository.reserveStock(good.getGoodid(), request.number())) {
             throw new IllegalArgumentException("库存不足，请减少购买数量");
         }

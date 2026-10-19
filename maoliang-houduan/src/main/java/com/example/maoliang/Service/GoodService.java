@@ -116,11 +116,7 @@ public class GoodService {
     }
 
     public List<Map<String, Object>> showBuyerCart(int userId) {
-        List<Map<String, Object>> maps = goodRepository.showBuyerCart(userId);
-        for (Map<String, Object> map : maps) {
-            map.put("quantity",0);
-        }
-        return maps;
+        return goodRepository.showBuyerCart(userId);
     }
 //    public List<GoodList> showLike(int userId) {
 //        return goodRepository.showLike(userId);
