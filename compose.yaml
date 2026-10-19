@@ -61,6 +61,9 @@ services:
       DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       QWEN_CHAT_MODEL: ${QWEN_CHAT_MODEL:-qwen-plus}
       QWEN_EMBEDDING_MODEL: ${QWEN_EMBEDDING_MODEL:-text-embedding-v4}
+      DIFY_API_KEY: ${DIFY_API_KEY:-}
+      DIFY_BASE_URL: ${DIFY_BASE_URL:-https://api.dify.ai/v1}
+      DIFY_TOOL_TOKEN: ${DIFY_TOOL_TOKEN:-}
     volumes:
       - ./data/images:/app/catalog-images:ro
       - uploaded_images:/app/img

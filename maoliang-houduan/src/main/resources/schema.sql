@@ -194,3 +194,29 @@ CREATE TABLE IF NOT EXISTS rag_catalog_outbox (
     operation VARCHAR(20) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- AI customer service conversation history (Dify + local session persistence).
+CREATE TABLE IF NOT EXISTS MLcs_conversation (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_key VARCHAR(64) NOT NULL,
+    userid INTEGER NULL,
+    title VARCHAR(100) NOT NULL,
+    dify_conversation_id VARCHAR(128) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_mlcs_conv_user (user_key, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS MLcs_message (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    conversation_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL,
+    content TEXT NOT NULL,
+    intent VARCHAR(32) NULL,
+    recommendations_json TEXT NULL,
+    orders_json TEXT NULL,
+    provider VARCHAR(32) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_mlcs_msg_conv (conversation_id, id),
+    FOREIGN KEY (conversation_id) REFERENCES MLcs_conversation (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -30,6 +30,11 @@ export default {
     this.fetchUsrFromSession();
     this.fetchGoodFromSession();
   },
+  watch: {
+    '$route.query.goodid'() {
+      this.fetchGoodFromSession();
+    }
+  },
   computed: {
     isLoggedIn() {
       // 根据当前用户数据判断用户是否登录
