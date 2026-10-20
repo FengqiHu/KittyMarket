@@ -146,7 +146,7 @@ public class CatalogRagService {
         long offset = ((long) page - 1) * size;
         List<Good> pageItems = offset >= matches.size() ? List.of()
                 : matches.subList((int) offset, (int) Math.min(offset + size, matches.size()));
-        List<Integer> ids = pageItems.stream().limit(5).map(Good::getGoodid).toList();
+        List<Integer> ids = pageItems.stream().limit(10).map(Good::getGoodid).toList();
         // The search page no longer displays generated explanations. Avoid a chat call on every page.
         String summary = "";
         return new CatalogSearchResult(pageItems, summary,

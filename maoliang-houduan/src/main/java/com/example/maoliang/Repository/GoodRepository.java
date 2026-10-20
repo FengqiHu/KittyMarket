@@ -86,8 +86,8 @@ public class GoodRepository{
         int count = jdbcTemplate.queryForObject(checkIfExistsSql, Integer.class, goodId,buyer);
 
         if (count > 0) {
-            String updateSql = "UPDATE MLbuying SET islike = 1 WHERE goodid = ?";
-            jdbcTemplate.update(updateSql, goodId);
+            String updateSql = "UPDATE MLbuying SET islike = 1 WHERE goodid = ? AND buyer = ?";
+            jdbcTemplate.update(updateSql, goodId, buyer);
         } else {
             String insertSql = "INSERT INTO MLbuying(goodid, number, islike, buyer) VALUES (?, ?, ?, ?)";
             jdbcTemplate.update(insertSql, goodId, 0, 1, buyer);

@@ -1,6 +1,6 @@
 <template>
 <div class="section-heading"><div><h1>商品详情</h1></div><el-button @click="$router.push('/buyer')"><el-icon><IconArrowLeft /></el-icon>返回商品列表</el-button></div>
-<section v-if="selectedProduct.goodid" class="surface product-detail"><div><ProductMedia v-for="(media,index) in selectedProduct.mediaFiles" v-show="media.isActive" :key="index" :path="media.url" :alt="selectedProduct.goodname" /><div v-if="selectedProduct.mediaFiles.length > 1" class="media-controls"><el-button circle aria-label="上一张" @click="showPrevMedia(selectedProduct)"><el-icon><IconArrowLeft /></el-icon></el-button><el-button circle aria-label="下一张" @click="showNextMedia(selectedProduct)"><el-icon><IconArrowRight /></el-icon></el-button></div></div><div class="product-detail-copy"><el-tag round effect="plain">{{ selectedProduct.kind }} / {{ selectedProduct.subkind }}</el-tag><h1>{{ selectedProduct.goodname }}</h1><p>{{ selectedProduct.description }}</p><div class="detail-price">¥{{ Number(selectedProduct.price).toFixed(2) }}<small>/ 件</small></div><el-descriptions :column="1"><el-descriptions-item label="剩余库存">{{ selectedProduct.number }} 件</el-descriptions-item><el-descriptions-item label="适用品种">{{ selectedProduct.catkind }}</el-descriptions-item><el-descriptions-item label="适用体重">{{ selectedProduct.catweight }} kg</el-descriptions-item><el-descriptions-item label="适用年龄">{{ selectedProduct.catage }} 岁</el-descriptions-item><el-descriptions-item label="能量">{{ selectedProduct.calorie }} cal/g</el-descriptions-item></el-descriptions><div v-if="isLoggedIn" class="detail-actions"><el-button type="primary" size="large" :disabled="selectedProduct.number < 1" @click="buyProduct(selectedProduct.goodid)">立即购买</el-button><el-button size="large" :disabled="selectedProduct.number < 1" @click="addToCart"><el-icon><IconShoppingCart /></el-icon>加入购物车</el-button><el-button size="large" @click="addToFavorites"><el-icon><IconStar /></el-icon>收藏</el-button></div><el-alert v-else type="info" title="登录后可以加入购物车或收藏商品" :closable="false" show-icon><el-button text @click="$router.push('/')">去登录</el-button></el-alert></div></section><el-empty v-else description="还没有选择商品"><el-button @click="$router.push('/buyer')">浏览商品</el-button></el-empty>
+<section v-if="selectedProduct.goodid" class="surface product-detail"><div><ProductMedia v-for="(media,index) in selectedProduct.mediaFiles" v-show="media.isActive" :key="index" :path="media.url" :alt="selectedProduct.goodname" /><div v-if="selectedProduct.mediaFiles.length > 1" class="media-controls"><el-button circle aria-label="上一张" @click="showPrevMedia(selectedProduct)"><el-icon><IconArrowLeft /></el-icon></el-button><el-button circle aria-label="下一张" @click="showNextMedia(selectedProduct)"><el-icon><IconArrowRight /></el-icon></el-button></div></div><div class="product-detail-copy"><el-tag round effect="plain">{{ selectedProduct.kind }} / {{ selectedProduct.subkind }}</el-tag><h1>{{ selectedProduct.goodname }}</h1><p>{{ selectedProduct.description }}</p><div class="detail-price">¥{{ Number(selectedProduct.price).toFixed(2) }}<small>/ 件</small></div><el-descriptions :column="1"><el-descriptions-item label="剩余库存">{{ selectedProduct.number }} 件</el-descriptions-item><el-descriptions-item label="适用品种">{{ selectedProduct.catkind }}</el-descriptions-item><el-descriptions-item label="适用体重">{{ selectedProduct.catweight }} kg</el-descriptions-item><el-descriptions-item label="适用年龄">{{ selectedProduct.catage }} 岁</el-descriptions-item><el-descriptions-item label="能量">{{ selectedProduct.calorie }} cal/g</el-descriptions-item></el-descriptions><div v-if="isLoggedIn" class="detail-actions"><el-button type="primary" size="large" :disabled="selectedProduct.number < 1" @click="buyProduct(selectedProduct.goodid)">立即购买</el-button><el-button size="large" :disabled="selectedProduct.number < 1" @click="addToCart"><el-icon><IconShoppingCart /></el-icon>加入购物车</el-button><el-button :type="isFavorite(selectedProduct.goodid) ? 'primary' : 'default'" size="large" :aria-pressed="isFavorite(selectedProduct.goodid)" :title="isFavorite(selectedProduct.goodid) ? '点击取消收藏' : '收藏商品'" :loading="favoriteBusy(selectedProduct.goodid)" @click="toggleFavorite(selectedProduct.goodid, currentUser.userid)"><el-icon><IconStarFilled v-if="isFavorite(selectedProduct.goodid)" /><IconStar v-else /></el-icon>{{ favoriteLabel(selectedProduct.goodid) }}</el-button></div><el-alert v-else type="info" title="登录后可以加入购物车或收藏商品" :closable="false" show-icon><el-button text @click="$router.push('/')">去登录</el-button></el-alert></div></section><el-empty v-else description="还没有选择商品"><el-button @click="$router.push('/buyer')">浏览商品</el-button></el-empty>
 </template>
 
 <script>
@@ -8,8 +8,10 @@ import { ElMessage } from 'element-plus';
 import { mediaUrl } from '../utils/media';
 import { mapActions } from 'vuex';
 import axios from "axios";
+import favorites from '../mixins/favorites';
 
 export default {
+  mixins: [favorites],
   data() {
     return {
       items: [],
@@ -74,6 +76,7 @@ export default {
 
         // 更新组件的 currentUser 数据
         this.currentUser = usr;
+        await this.loadFavorites(usr?.userid);
         return true;
       } catch (error) {
         console.error('获取用户数据错误:', error);
@@ -109,8 +112,7 @@ export default {
           kind: good.kind,
           subkind: good.subkind,
           buyingid: good.buyingid,
-          numbermax: good.numbermax,
-          islike: good.islike
+          numbermax: good.numbermax
         };
         console.log('this.selectedProduct:', this.selectedProduct);
         return true;
@@ -168,18 +170,6 @@ export default {
         // 处理返回的详细信息
         console.log(res.data);
         ElMessage.info("商品已添加购物车");
-      }).catch(error => {
-        // 处理请求错误
-        console.error(error);
-      });
-    },
-    addToFavorites() {
-      // 调用接口，获取详细信息
-      axios.post('/cart/addLike', null, { params: { goodid: this.selectedProduct.goodid, iscancel: 0, userid: this.currentUser.userid } }).then(res => {
-        ElMessage.info("商品已添加到收藏夹！");
-        console.log(res)
-
-        // 处理返回的详细信息
       }).catch(error => {
         // 处理请求错误
         console.error(error);

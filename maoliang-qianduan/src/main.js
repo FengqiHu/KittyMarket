@@ -3,6 +3,7 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import axios from "axios";
+import { notifyRateLimit } from './utils/rateLimitFeedback';
 import { ElAlert, ElAvatar, ElButton, ElConfigProvider, ElDescriptions, ElDescriptionsItem, ElDialog, ElDivider, ElEmpty, ElForm, ElFormItem, ElIcon, ElImage, ElInput, ElInputNumber, ElMenu, ElMenuItem, ElOption, ElPagination, ElRadioButton, ElRadioGroup, ElResult, ElSelect, ElSkeleton, ElTable, ElTableColumn, ElTag, ElLoading } from 'element-plus';
 import 'element-plus/es/components/base/style/css';
 import 'element-plus/es/components/alert/style/css';
@@ -30,7 +31,7 @@ import 'element-plus/es/components/loading/style/css';
 import 'element-plus/es/components/message/style/css';
 import 'element-plus/es/components/message-box/style/css';
 import './styles/theme.css';
-import { House, Shop, ShoppingCart, Star, Tickets, User, Plus, Search, ArrowRight, ArrowLeft, SwitchButton, Lock, Box, Upload, Grid, Collection, Edit, Delete, Picture, Menu, Close, Check, Refresh, ArrowDown } from '@element-plus/icons-vue';
+import { House, Shop, ShoppingCart, Star, StarFilled, Tickets, User, Plus, Search, ArrowRight, ArrowLeft, SwitchButton, Lock, Box, Upload, Grid, Collection, Edit, Delete, Picture, Menu, Close, Check, Refresh, ArrowDown } from '@element-plus/icons-vue';
 import AuthLayout from './components/AuthLayout.vue';
 import ProductMedia from './components/ProductMedia.vue';
 
@@ -39,7 +40,7 @@ const app = createApp(App);
 app.use(ElLoading);
 app.component('AuthLayout', AuthLayout);
 app.component('ProductMedia', ProductMedia);
-Object.entries({ House, Shop, ShoppingCart, Star, Tickets, User, Plus, Search, ArrowRight, ArrowLeft, SwitchButton, Lock, Box, Upload, Grid, Collection, Edit, Delete, Picture, Menu, Close, Check, Refresh, ArrowDown }).forEach(([name, icon]) => app.component(`Icon${name}`, icon));
+Object.entries({ House, Shop, ShoppingCart, Star, StarFilled, Tickets, User, Plus, Search, ArrowRight, ArrowLeft, SwitchButton, Lock, Box, Upload, Grid, Collection, Edit, Delete, Picture, Menu, Close, Check, Refresh, ArrowDown }).forEach(([name, icon]) => app.component(`Icon${name}`, icon));
 
 // 检查本地存储并初始化store的state
 const adminData = localStorage.getItem('admin');
@@ -63,12 +64,28 @@ axios.interceptors.request.use(function (config) {
   return Promise.reject(error);
 });
 
+axios.interceptors.response.use(response => response, error => {
+  if (error.response?.status === 429) {
+    const { data, headers } = error.response;
+    const message = data?.msg;
+    notifyRateLimit(message, headers['retry-after']);
+    if (message) error.message = message;
+  }
+  return Promise.reject(error);
+});
+
 // 添加全局 Fetch 请求拦截器
 const originalFetch = window.fetch;
 window.fetch = function (url, options) {
   // 判断请求目标地址是否包含/api，如果不包含则添加/api前缀
   const apiUrl = !url.includes('/api') ? `/api${url}` : url;
-  return originalFetch(apiUrl, options);
+  return originalFetch(apiUrl, options).then(async response => {
+    if (response.status === 429) {
+      const data = await response.clone().json().catch(() => null);
+      notifyRateLimit(data?.msg, response.headers.get('Retry-After'));
+    }
+    return response;
+  });
 };
 
 app.use(router);

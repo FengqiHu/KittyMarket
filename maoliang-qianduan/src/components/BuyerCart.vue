@@ -21,8 +21,8 @@
       <el-table-column label="小计" width="130">
         <template #default="{row}"><strong>¥{{ (row.price * row.quantity).toFixed(2) }}</strong></template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
-        <template #default="{row}"><el-button link type="primary" @click="favorite(row)">收藏</el-button><el-button link type="danger" @click="remove(row)">移除</el-button></template>
+      <el-table-column label="操作" width="210">
+        <template #default="{row}"><el-button :type="isFavorite(row.id) ? 'primary' : 'default'" :aria-pressed="isFavorite(row.id)" :title="isFavorite(row.id) ? '点击取消收藏' : '收藏商品'" :loading="favoriteBusy(row.id)" size="small" @click="toggleFavorite(row.id, user.userid)"><el-icon><IconStarFilled v-if="isFavorite(row.id)" /><IconStar v-else /></el-icon>{{ favoriteLabel(row.id) }}</el-button><el-button link type="danger" @click="remove(row)">移除</el-button></template>
       </el-table-column>
     </el-table>
     <div class="table-pagination cart-checkout-bar">
@@ -37,8 +37,10 @@
 <script>
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import favorites from '../mixins/favorites';
 const normalize = row => Object.fromEntries(Object.entries(row).map(([key,value]) => [key.toLowerCase(),value]));
 export default {
+  mixins: [favorites],
   data: () => ({ items: [], selectedItems: [], user: null, loading: false, error: '' }),
   computed: {
     total() { return this.selectedItems.reduce((sum,item) => sum + Math.round(item.price * 100) * (item.quantity || 0),0) / 100; },
@@ -52,6 +54,7 @@ export default {
       try {
         this.user = (await axios.get('/now-usr')).data;
         if (!this.user?.userid) { this.error = '登录后即可查看购物车'; this.items = []; return; }
+        await this.loadFavorites(this.user.userid);
         const { data } = await axios.get('/cart/allCart', { params: { userId: this.user.userid } });
         if (!Array.isArray(data)) throw new Error('购物车数据格式错误');
         this.items = data.map(normalize).map(item => ({ ...item, quantity: Math.max(1, Number(item.quantity) || 1) }));
@@ -67,7 +70,6 @@ export default {
         fromCart: '1', items: JSON.stringify(this.selectedItems.map(item => ({ goodid: item.id, number: item.quantity }))),
       } });
     },
-    async favorite(item) { try { await axios.post('/cart/addLike',null,{params:{goodid:item.id,iscancel:0,userid:this.user.userid}}); ElMessage.success('已加入收藏'); } catch { ElMessage.error('收藏失败，请重试'); } },
     async remove(item) { try { await ElMessageBox.confirm('从购物车移除这件商品？','移除商品',{confirmButtonText:'移除',cancelButtonText:'保留',type:'warning'}); } catch { return; } try { await axios.post('/cart/delete-cart-item',null,{params:{buyingid:item.id,userid:this.user.userid}}); await this.load(); ElMessage.success('已移除'); } catch { ElMessage.error('移除失败，请重试'); } },
   },
 };

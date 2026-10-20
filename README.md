@@ -17,6 +17,17 @@ docker compose ps
 
 前端访问 http://127.0.0.1:3000/，后端直连 http://127.0.0.1:8080/，RabbitMQ 管理界面访问 http://127.0.0.1:15672/。前端的 `/api` 由 Nginx 转发到容器内后端；MySQL、Redis 和 RabbitMQ 的服务端口只在 Compose 网络中开放，不占用宿主机的相应端口。各容器使用服务名互相连接。
 
+接口默认启用令牌桶限流：登录用户按服务端会话中的用户 ID 共用额度，游客按客户端 IP 共用额度，修改请求里的 `userid`、换会话或换标签页不会重置同一身份的额度。所有请求先经过普通额度，写操作、AI/语义搜索/选粮、登录注册及找回密码再经过各自的额度。
+
+| 请求类别 | 瞬时最多放行 | 持续恢复速度 |
+| --- | --- | --- |
+| 普通接口 | 20 次 | 每秒 1 次 |
+| 收藏、购物车、下单等写操作 | 5 次 | 每 3 秒 1 次 |
+| AI 对话、语义搜索及选粮 | 2 次 | 每 6 秒 1 次 |
+| 登录、注册及找回密码（按 IP） | 5 次 | 每 12 秒 1 次 |
+
+超限返回 HTTP `429`、`Retry-After` 秒数及 `data.code=RATE_LIMITED`，前端统一提示等待时间，不自动重试写操作。静态图片、脚本及 OPTIONS 预检不计入额度。Redis Lua 原子扣减在多个后端实例间共享额度；Redis 不可用时使用有容量上限的本机限流，故障期间额度按实例计算，恢复后重新使用共享额度。配置见 `.env.example` 的 `RATE_LIMIT_*`，`RATE_LIMIT_ENABLED=false` 可关闭。Compose 仅信任 `frontend` 容器覆盖写入的 `X-Real-IP`；直连后端不信任客户端自行传入的转发头。单独运行后端时默认使用连接来源 IP，如需使用其他反向代理，应将 `RATE_LIMIT_TRUSTED_PROXY` 设置为该代理的主机名或 IP。
+
 首次创建 MySQL 数据卷时，容器会执行 `schema.sql` 和 `database/demo-data.sql`，创建业务表并导入演示数据；之后数据保存在 `mysql_data` 卷中，不会因重建容器丢失。商品上传图片保存在 `uploaded_images` 卷中，已有目录 `data/images` 以只读方式挂载给后端。启动前可在 `.env` 中填写 `DASHSCOPE_API_KEY`，留空时使用本地检索和规则推荐。`.env` 不提交到 Git；共享部署须修改默认密码。
 
 停止服务使用 `docker compose down`；不要加 `-v`，除非明确要删除 MySQL、RabbitMQ 和上传图片的数据卷。更新代码后运行 `docker compose up -d --build`。查看日志使用 `docker compose logs -f backend`。
